@@ -41,6 +41,10 @@ services:
         value: true
       - key: USING_NGINX
         value: 0 # Not 'false'; is cast
+      - key: DISABLE_SENTRY
+        value: 1 # Stop sending error data to upstream TabbyCat Sentry
+      - key: DJANGO_LOG_LEVEL
+        value: INFO # Was DEBUG by default — huge log volume cost on Render
   - type: redis
     name: tabbycat_redis
     ipAllowList: # required
