@@ -8,7 +8,7 @@ services:
   - type: web
     name: tabbycat_website
     env: python
-    plan: free
+    plan: standard
     region: oregon
     buildCommand: "./bin/render-compile.sh"
     startCommand: "npm run render-serve"
@@ -32,7 +32,7 @@ services:
       - key: PYTHON_VERSION
         value: "3.12.3"
       - key: WEB_CONCURRENCY
-        value: 4
+        value: 2
       - key: TAB_DIRECTOR_EMAIL
         sync: false
       - key: TIME_ZONE
