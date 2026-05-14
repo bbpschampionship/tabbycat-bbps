@@ -7,15 +7,15 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-  <title>{% if tournament %}{{ tournament.short_name }}{% else %}{% trans "Tabbycat" %}{% endif %} | {% if page_title %}{{ page_title }}{% else %}{% block page-title %}{% endblock %}{% endif %}</title>
+  <title>{% if tournament %}{{ tournament.short_name }}{% else %}BBPS Rohini Debate Championship 2026{% endif %} | {% if page_title %}{{ page_title }}{% else %}{% block page-title %}{% endblock %}{% endif %}</title>
 
   {% if tournament %}
     {% blocktrans trimmed with tournament=tournament.short_name asvar meta_description %}
-      The tab for {{ tournament }} runs on Tabbycat, a source-available tab system for a variety of parliamentary debating formats
+      The official tab site for {{ tournament }} — BBPS Rohini Debate Championship 2026, hosted by Bal Bharati Public School, Rohini on 16 May 2026. Academic Partner: Taivas Debate Club.
     {% endblocktrans %}
   {% else %}
     {% blocktrans trimmed asvar meta_description %}
-      This tab runs on Tabbycat, a source-available tab system for a variety of parliamentary debating formats
+      Official tab site for the BBPS Rohini Debate Championship 2026 — Modified World Schools format, hosted by Bal Bharati Public School, Rohini on 16 May 2026. Academic Partner: Taivas Debate Club.
     {% endblocktrans %}
   {% endif %}
   <meta name="description" content="{{ meta_description }}" />
@@ -34,7 +34,7 @@
   <link rel="preload" href="{% static 'fonts/Inter-Regular.woff2' %}" as="font" type="font/woff2">
   <link rel="icon" type="image/png" href="{% static 'logo-32x32.png' %}" sizes="32x32" />
   <link rel="icon" type="image/png" href="{% static 'logo-16x16.png' %}" sizes="16x16" />
-  <link rel="mask-icon" href="{% static 'safari-tab.svg' %}" color="rgb(102, 61, 160)">
+  <link rel="mask-icon" href="{% static 'safari-tab.svg' %}" color="rgb(107, 15, 26)">
   <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}" />
   {% block extra-css %}{% endblock %}
   {% block extra-head %}{% endblock %}
@@ -43,17 +43,7 @@
   <link href="{% static 'vue/js/app.js' %}" rel=preload as=script>
   {% endif %}
 
-  {% if not debug %}<!-- Analytics -->
-  <script>
-    window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-    ga('create', 'UA-314178-25', 'auto');
-    ga('set', 'dimension1', '{% if tabbycat_version %}{{ tabbycat_version }}{% else %}?{% endif %}');
-    ga('set', 'dimension2', window.location.hostname);
-    ga('send', 'pageview');
-    </script>
-    <script async src='https://www.google-analytics.com/analytics.js'></script>
-  </script>
-  {% endif %}
+  {# Tabbycat upstream analytics removed for BBPS instance #}
 
   {% if LANGUAGE_CODE == 'tzl' %}<!-- In-context translations; use Talossan -->
   <script>

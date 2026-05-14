@@ -26,11 +26,11 @@ $h3-font-size: $font-size-base * 1.7; // Tweak for better mobile spacing
 // Bootstrap Color Overrides
 //------------------------------------------------------------------------------
 
-// Theme colors
-$purple:                  #663da0; // Primary
-$green:                   #00bf8a; // Success
+// Theme colors — BBPS Rohini Debate Championship 2026 palette
+$purple:                  #6B0F1A; // Primary (BBPS crimson)
+$green:                   #2A9D8F; // Success (teal accent)
 $blue:                    #17a2b8; // Info
-$orange:                  #fd681d; // Warning
+$orange:                  #F5C800; // Warning (BBPS gold)
 $red:                     #d1185e; // Danger
 
 // Bootstrap defaults; just copied here so they can be referred to
@@ -45,7 +45,7 @@ $gray-800: #343a40 !default;
 $gray-900: #212529 !default;
 
 // Key Colors
-$body-bg:                 #f8fafc;
+$body-bg:                 #FBF3D9; // BBPS cream background
 $body-color:              $gray-900; // Gray-900 equivalent; for body text
 
 $theme-colors: (
