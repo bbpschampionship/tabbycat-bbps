@@ -2,15 +2,6 @@
 // Web Fonts
 //------------------------------------------------------------------------------
 
-// Primary Typeface
-@font-face {
-  font-family: 'Inter-Regular';
-  src: url('/static/fonts/Inter-Regular.woff2') format('woff2'), url('/static/fonts/Inter-Regular.woff') format('woff');
-  font-weight: normal;
-  font-style: normal;
-  text-rendering: optimizeLegibility;
-}
-
 h6,
 .h6 {
   font-size: $small-font-size;
