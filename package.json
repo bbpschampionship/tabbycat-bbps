@@ -27,7 +27,7 @@
   "dependencies": {
     "@babel/cli": "^7.16.0",
     "@babel/core": "^7.16.0",
-    "@babel/preset-env": "^7.16.4",
+    "@babel/preset-env": "^7.29.5",
     "@popperjs/core": "^2.6.0",
     "@sentry/vue": "^10.32.1",
     "@vue/compiler-sfc": "^3.5.0",
