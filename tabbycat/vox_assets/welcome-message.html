@@ -1,0 +1,68 @@
+<style>
+.vox-hero{margin:-1.25rem -1.25rem 0;background:#0f2444;color:#FBF9F3;padding:0;overflow:hidden}
+.vox-section{padding:48px 28px;text-align:center;position:relative}
+.vox-hero .badge-tag{display:inline-block;background:#C4A052;color:#0f2444;padding:8px 22px;font-family:"League Spartan",sans-serif;font-weight:700;font-size:11px;letter-spacing:.28em;text-transform:uppercase}
+.vox-hero h1.title{font-family:"Anton",sans-serif;font-weight:400;font-size:clamp(38px,6.2vw,72px);line-height:.9;letter-spacing:.01em;color:#C4A052;text-transform:uppercase;margin:18px 0 0}
+.vox-hero h2.subtitle{font-family:"Anton",sans-serif;font-weight:400;font-size:clamp(20px,3.2vw,34px);line-height:1;color:#FBF9F3;text-transform:uppercase;margin:8px 0 0;letter-spacing:.02em}
+.vox-hero .rule{width:80px;height:3px;background:#C4A052;margin:28px auto}
+.vox-hero .tagline{font-family:"Cormorant Garamond",Georgia,serif;font-style:italic;font-weight:500;font-size:clamp(17px,2.3vw,24px);color:#FBF9F3;opacity:.85;margin:20px auto 0;max-width:560px;line-height:1.5}
+
+/* Format / how-it-runs strip */
+.vox-format{background:#0b1c37;padding:56px 28px;border-top:1px solid rgba(255,255,255,.06)}
+.vox-format .head-lbl{font-family:"League Spartan",sans-serif;font-weight:700;font-size:11px;letter-spacing:.4em;color:#C4A052;text-transform:uppercase;opacity:.85}
+.vox-format .head-big{font-family:"Anton",sans-serif;font-size:clamp(28px,4.6vw,48px);color:#FBF9F3;text-transform:uppercase;margin:6px 0 0;line-height:.95}
+.vox-format .steps{max-width:640px;margin:34px auto 0;display:flex;flex-direction:column;gap:10px;text-align:left}
+.vox-step{display:grid;grid-template-columns:52px 1fr;gap:18px;align-items:center;padding:14px 18px;background:rgba(196,160,82,.06);border-left:4px solid #C4A052}
+.vox-step .n{font-family:"Anton",sans-serif;font-size:30px;line-height:1;color:#C4A052;text-align:center}
+.vox-step .t{font-family:"Cormorant Garamond",Georgia,serif;font-size:clamp(16px,2vw,20px);color:#FBF9F3;line-height:1.4}
+.vox-step .t b{font-family:"League Spartan",sans-serif;font-weight:700;letter-spacing:.01em}
+
+/* Meta strip */
+.vox-meta{background:#0f2444;padding:32px 28px}
+.vox-meta .row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;max-width:600px;margin:0 auto}
+@media(max-width:640px){.vox-meta .row{grid-template-columns:repeat(2,1fr);max-width:340px}}
+.vox-meta .cell{padding:10px 6px;background:rgba(196,160,82,.06);border-top:2px solid #C4A052;text-align:center}
+.vox-meta .cell .k{display:block;font-family:"League Spartan",sans-serif;font-weight:700;font-size:9px;letter-spacing:.25em;color:#C4A052;text-transform:uppercase}
+.vox-meta .cell .v{display:block;font-family:"Anton",sans-serif;font-size:20px;color:#FBF9F3;margin-top:4px;text-transform:uppercase}
+
+/* Credit */
+.vox-credit{background:#C4A052;color:#0f2444;padding:28px;text-align:center}
+.vox-credit p{font-family:"League Spartan",sans-serif;font-weight:600;font-size:11px;letter-spacing:.2em;text-transform:uppercase;line-height:1.8;margin:0}
+.vox-credit .strong{font-weight:800;letter-spacing:.24em}
+</style>
+
+<div class="vox-hero">
+
+  <div class="vox-section">
+    <div class="badge-tag">Vox Shalom · Debating Society</div>
+    <h1 class="title">Vox Debating</h1>
+    <h2 class="subtitle">Championship</h2>
+    <div class="rule"></div>
+    <p class="tagline">The intra-school debating championship of Shalom Presidency School, Gurugram — run in the World Schools (WSDC) format, in collaboration with Taivas.</p>
+  </div>
+
+  <div class="vox-section vox-format">
+    <div class="head-lbl">How the tournament runs</div>
+    <div class="head-big">Road to the Grand Final</div>
+    <div class="steps">
+      <div class="vox-step"><div class="n">1</div><div class="t"><b>Opening Round</b> — all teams debate one motion; results seed the knockout draw.</div></div>
+      <div class="vox-step"><div class="n">2</div><div class="t"><b>Pre-Quarter-finals</b> — the top 16 teams by cumulative team &amp; speaker score advance.</div></div>
+      <div class="vox-step"><div class="n">3</div><div class="t"><b>Quarter-finals &amp; Semi-finals</b> — the field narrows to the final two.</div></div>
+      <div class="vox-step"><div class="n">4</div><div class="t"><b>Grand Final</b> — the top two teams debate before the full school audience.</div></div>
+    </div>
+  </div>
+
+  <div class="vox-section vox-meta">
+    <div class="row">
+      <div class="cell"><span class="k">Host</span><span class="v">Shalom</span></div>
+      <div class="cell"><span class="k">Format</span><span class="v">WSDC</span></div>
+      <div class="cell"><span class="k">Teams</span><span class="v">18</span></div>
+      <div class="cell"><span class="k">Break</span><span class="v">Top 16</span></div>
+    </div>
+  </div>
+
+  <div class="vox-credit">
+    <p>Organised By <span class="strong">Vox Shalom, Shalom Presidency School</span><br>In Collaboration With <span class="strong">Taivas</span></p>
+  </div>
+
+</div>

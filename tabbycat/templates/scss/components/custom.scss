@@ -28,11 +28,11 @@ $h3-font-size: $font-size-base * 1.7; // Tweak for better mobile spacing
 // Bootstrap Color Overrides
 //------------------------------------------------------------------------------
 
-// Theme colors — BBPS Rohini Debate Championship 2026 palette
-$purple:                  #6B0F1A; // Primary (BBPS crimson)
-$green:                   #2A9D8F; // Success (teal accent)
-$blue:                    #17a2b8; // Info
-$orange:                  #F5C800; // Warning (BBPS gold)
+// Theme colors — Vox Debating Championship (Shalom Presidency) palette
+$purple:                  #0f2444; // Primary (Vox Shalom navy)
+$green:                   #2A7D5B; // Success (deep emerald, sits with navy/gold)
+$blue:                    #23364f; // Info (muted slate-navy)
+$orange:                  #C4A052; // Warning (Vox Shalom gold)
 $red:                     #B91C1C; // tomato red, less candy-pink for the danger state
 
 // Bootstrap defaults; just copied here so they can be referred to
@@ -47,7 +47,7 @@ $gray-800: #343a40 !default;
 $gray-900: #212529 !default;
 
 // Key Colors
-$body-bg:                 #FAFAF7; // warm white, easier on eyes during long events
+$body-bg:                 #FBF9F3; // Vox ivory, easier on eyes during long events
 $body-color:              $gray-900; // Gray-900 equivalent; for body text
 
 $theme-colors: (

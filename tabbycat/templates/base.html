@@ -7,15 +7,15 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-  <title>{% if tournament %}{{ tournament.short_name }}{% else %}BBPS Rohini Debate Championship 2026{% endif %} | {% if page_title %}{{ page_title }}{% else %}{% block page-title %}{% endblock %}{% endif %}</title>
+  <title>{% if tournament %}{{ tournament.short_name }}{% else %}Vox Debating Championship{% endif %} | {% if page_title %}{{ page_title }}{% else %}{% block page-title %}{% endblock %}{% endif %}</title>
 
   {% if tournament %}
     {% blocktrans trimmed with tournament=tournament.short_name asvar meta_description %}
-      The official tab site for {{ tournament }} — BBPS Rohini Debate Championship 2026, hosted by Bal Bharati Public School, Rohini on 16 May 2026. Academic Partner: Taivas Debate Club.
+      The official tab site for {{ tournament }} — the Vox Debating Championship, Shalom Presidency School's intra-school WSDC-format championship, organised by Vox Shalom in collaboration with Taivas Debate Club.
     {% endblocktrans %}
   {% else %}
     {% blocktrans trimmed asvar meta_description %}
-      Official tab site for the BBPS Rohini Debate Championship 2026 — Modified World Schools format, hosted by Bal Bharati Public School, Rohini on 16 May 2026. Academic Partner: Taivas Debate Club.
+      Official tab site for the Vox Debating Championship — the WSDC-format intra-school debating championship of Shalom Presidency School, organised by Vox Shalom in collaboration with Taivas Debate Club.
     {% endblocktrans %}
   {% endif %}
   <meta name="description" content="{{ meta_description }}" />
@@ -36,7 +36,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=League+Spartan:wght@400;500;600;700&display=swap">
   <link rel="icon" type="image/png" href="{% static 'logo-32x32.png' %}" sizes="32x32" />
   <link rel="icon" type="image/png" href="{% static 'logo-16x16.png' %}" sizes="16x16" />
-  <link rel="mask-icon" href="{% static 'safari-tab.svg' %}" color="rgb(107, 15, 26)">
+  <link rel="mask-icon" href="{% static 'safari-tab.svg' %}" color="rgb(15, 36, 68)">
   <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}" />
   {% block extra-css %}{% endblock %}
   {% block extra-head %}{% endblock %}
@@ -45,7 +45,7 @@
   <link href="{% static 'vue/js/app.js' %}" rel=preload as=script>
   {% endif %}
 
-  {# Tabbycat upstream analytics removed for BBPS instance #}
+  {# Tabbycat upstream analytics removed for Vox Shalom instance #}
 
   {% if LANGUAGE_CODE == 'tzl' %}<!-- In-context translations; use Talossan -->
   <script>
