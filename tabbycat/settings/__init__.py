@@ -30,6 +30,9 @@ elif os.environ.get('IN_DOCKER', '') and bool(int(os.environ['IN_DOCKER'])):
 elif os.environ.get('ON_HEROKU', ''):
     base_settings.append('heroku.py')
     root.info('SPLIT_SETTINGS: imported heroku.py')
+elif os.environ.get('VERCEL', ''):
+    base_settings.append('vercel.py')
+    root.info('SPLIT_SETTINGS: imported vercel.py')
 elif os.environ.get('ON_RENDER', ''):
     base_settings.append('render.py')
     root.info('SPLIT_SETTINGS: imported render.py')

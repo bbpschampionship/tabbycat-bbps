@@ -83,3 +83,6 @@ nosetests.xml
 # Redis
 dump.rdb
 .superpowers/
+.vercel
+public/
+.vercel
