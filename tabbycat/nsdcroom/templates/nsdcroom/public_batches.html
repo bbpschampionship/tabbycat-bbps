@@ -1,0 +1,18 @@
+{% extends "nsdcroom/base.html" %}
+{% block title %}Batches · {{ tournament.short_name|default:tournament.name }}{% endblock %}
+{% block heading %}Batches &amp; draw{% endblock %}
+{% block content %}
+<nav class="tabs">
+  {% for r in rounds %}<a href="?round={{ r.seq }}" class="{% if r == round %}on{% endif %}">{{ r.name }}</a>{% endfor %}
+  {% if standings_released %}<a href="{% url 'nsdcroom-public-standings' tournament_slug=tournament.slug %}">Final rankings</a>{% endif %}
+</nav>
+{% for row in rooms %}
+  <section class="card">
+    <div class="pair-head"><h2 style="margin:0"><a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=row.room.id %}">{{ row.room.name }}</a></h2>
+      <span class="muted">{{ row.count }} speakers</span></div>
+    {% with block=row.block %}{% include "nsdcroom/_pairings.html" %}{% endwith %}
+  </section>
+{% empty %}
+  <div class="card">No batches yet.</div>
+{% endfor %}
+{% endblock %}

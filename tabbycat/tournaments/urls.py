@@ -27,6 +27,11 @@ urlpatterns = [
     path('tab/',                    include('standings.urls_public')),
     path('registration/',           include('registration.urls_public')),
 
+    # NSDC judge-run rooms (batches)
+    path('batches/',                include('nsdcroom.urls_public')),
+    path('room/',                   include('nsdcroom.urls_judge')),
+    path('admin/rooms/',            include('nsdcroom.urls_admin')),
+
     # Public Schedule
     path('schedule/',               views.PublicScheduleView.as_view(), name='tournament-public-schedule'),
 

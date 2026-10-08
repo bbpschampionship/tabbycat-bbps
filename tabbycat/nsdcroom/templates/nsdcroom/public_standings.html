@@ -1,0 +1,18 @@
+{% extends "nsdcroom/base.html" %}
+{% block title %}Rankings · {{ tournament.short_name|default:tournament.name }}{% endblock %}
+{% block heading %}Rankings{% endblock %}
+{% block content %}
+<nav class="tabs"><a href="{% url 'nsdcroom-public-batches' tournament_slug=tournament.slug %}">← Batches &amp; draw</a></nav>
+{% if not rows %}
+  <div class="card">Rankings will be published after all rounds are complete.</div>
+{% else %}
+<section class="card">
+  <p class="muted">Ranked by total score across all rounds, then wins. Top {{ release.qualify_count }} qualify.</p>
+  <table><thead><tr><th>#</th><th>Speaker</th><th>Batch</th>{% for r in rounds %}<th>{{ r.abbreviation }}</th>{% endfor %}<th>Wins</th><th>Total</th><th></th></tr></thead><tbody>
+  {% for row in rows %}<tr class="{% if row.qualified %}qual{% endif %}"><td>{{ row.rank }}</td><td><strong>{{ row.name }}</strong></td><td class="muted">{{ row.room.name }}</td>
+    {% for r in rounds %}<td>{% for rid, sc in row.by_round.items %}{% if rid == r.id %}{{ sc }}{% endif %}{% endfor %}</td>{% endfor %}
+    <td>{{ row.wins }}</td><td><strong>{{ row.total }}</strong></td><td>{% if row.qualified %}<span class="pill ok">Qualified</span>{% endif %}</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+{% endif %}
+{% endblock %}

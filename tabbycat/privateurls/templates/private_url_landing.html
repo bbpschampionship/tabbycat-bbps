@@ -35,6 +35,12 @@
 
 {% block content %}
 
+  {% if object.adjudicator %}
+    <a class="btn btn-primary btn-lg btn-block mb-4" href="{% tournamenturl 'nsdcroom-judge' url_key=object.url_key %}">
+      Open your judge room — attendance, draw, motions &amp; scores
+    </a>
+  {% endif %}
+
   <div class="list-group">
 
     {% if vapid_application_server_key %}

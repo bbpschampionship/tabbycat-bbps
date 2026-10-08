@@ -1,0 +1,44 @@
+{% extends "nsdcroom/base.html" %}
+{% block title %}Rooms · {{ tournament.short_name|default:tournament.name }}{% endblock %}
+{% block eyebrow %}Tab director · {{ tournament.name }}{% endblock %}
+{% block heading %}Judge rooms{% endblock %}
+{% block content %}
+<nav class="tabs">
+  {% for r in rounds %}<a href="?round={{ r.seq }}" class="{% if r == round %}on{% endif %}">{{ r.name }}</a>{% endfor %}
+  <a href="{% url 'nsdcroom-public-batches' tournament_slug=tournament.slug %}">Public page ↗</a>
+</nav>
+
+{% if round %}
+<section class="card">
+  <h2>{{ round.name }} results {% if released %}<span class="pill ok">public</span>{% else %}<span class="pill">hidden</span>{% endif %}</h2>
+  <p class="muted">Releasing makes this round's scores public on every batch page and locks judges out of editing it.</p>
+  <form method="post">{% csrf_token %}<input type="hidden" name="round" value="{{ round.seq }}">
+    {% if released %}<button name="action" value="hide_results" class="ghost">Hide {{ round.name }} results</button>
+    {% else %}<button name="action" value="release_results">Release {{ round.name }} results</button>{% endif %}
+  </form>
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>Final rankings {% if release.standings_released %}<span class="pill ok">public</span>{% else %}<span class="pill">hidden</span>{% endif %}</h2>
+  <form method="post" class="row">{% csrf_token %}<input type="hidden" name="round" value="{{ round.seq }}">
+    <label>Qualify top <input type="number" name="qualify_count" value="{{ release.qualify_count }}" min="0"></label>
+    {% if release.standings_released %}<button name="action" value="hide_standings" class="ghost">Hide rankings</button>
+    {% else %}<button name="action" value="release_standings">Release rankings</button>{% endif %}
+  </form>
+</section>
+
+<section class="card">
+  <h2>Rooms · {{ round.name }}</h2>
+  <table><thead><tr><th>Batch</th><th>Present</th><th>Pairs</th><th>Scored</th><th>Draw</th><th>Judge link</th></tr></thead><tbody>
+  {% for row in rooms %}<tr>
+    <td><strong>{{ row.room.name }}</strong><div class="muted">{{ row.count }} speakers</div></td>
+    <td>{{ row.present }}</td><td>{{ row.pairs }}</td>
+    <td>{% if row.pairs and row.scored == row.pairs %}<span class="pill ok">{{ row.scored }}/{{ row.pairs }}</span>{% else %}{{ row.scored }}/{{ row.pairs }}{% endif %}</td>
+    <td>{% if row.announced %}<span class="pill ok">announced</span>{% else %}<span class="pill">—</span>{% endif %}</td>
+    <td>{% for j in row.judges %}<div>{{ j.judge.name }}: {% if j.url %}<a href="{{ j.url }}" target="_blank">{{ j.url }}</a>{% else %}<span class="pill bad">no private URL — generate under Private URLs</span>{% endif %}</div>{% empty %}<span class="pill bad">no judge</span>{% endfor %}</td>
+  </tr>{% endfor %}
+  </tbody></table>
+  {% if orphan_judges %}<p class="msg warning">Judges with no batch (set their institution to the batch): {% for j in orphan_judges %}{{ j.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,148 @@
+{% extends "nsdcroom/base.html" %}
+{% block title %}Judge · {{ room.name|default:"No batch" }}{% endblock %}
+{% block eyebrow %}Judge console · {{ judge.name }}{% endblock %}
+{% block heading %}{{ room.name|default:"No batch assigned" }}{% endblock %}
+{% block content %}
+{% if not room %}
+  <div class="card">You are not assigned to a batch yet. Please contact the tab team.</div>
+{% elif not round %}
+  <div class="card">No rounds have been set up yet.</div>
+{% else %}
+<nav class="tabs">
+  {% for r in rounds %}<a href="?round={{ r.seq }}" class="{% if r == round %}on{% endif %}">{{ r.name }}</a>{% endfor %}
+</nav>
+{% if locked %}<div class="msg warning">{{ round.name }} results have been released and are locked. Contact the tab team for any change.</div>{% endif %}
+
+{# ---------- 1. Attendance ---------- #}
+<section class="card">
+  <h2><span class="step">1</span> Attendance <span class="pill">{{ present_count }} / {{ speakers|length }} present</span></h2>
+  <p class="muted">Tick everyone who is in the room for {{ round.name }}, then save.</p>
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="action" value="attendance"><input type="hidden" name="round" value="{{ round.seq }}">
+    {% for s in speakers %}
+      <label class="check"><input type="checkbox" name="present_{{ s.team.id }}" {% if s.present %}checked{% endif %} {% if locked %}disabled{% endif %}>
+        <span class="grow">{{ s.name }}</span>
+        {% if s.marked and not s.present %}<span class="pill bad">absent</span>{% endif %}
+      </label>
+    {% empty %}<p>No speakers in this batch.</p>{% endfor %}
+    <p class="row" style="margin-top:12px"><button type="submit" {% if locked %}disabled{% endif %}>Save attendance</button>
+      <button type="button" class="ghost" onclick="document.querySelectorAll('.check input').forEach(c=>c.checked=true)" {% if locked %}disabled{% endif %}>Tick all</button></p>
+  </form>
+</section>
+
+{# ---------- 2. Draw ---------- #}
+<section class="card" id="draw">
+  <h2><span class="step">2</span> Draw</h2>
+  <p class="muted">{% if round.seq == 1 %}Round 1 pairs present speakers at random.{% else %}Pairs speakers with similar scores so far, avoiding repeat opponents.{% endif %}
+    An odd number gives one group of three.</p>
+  <form method="post" class="row">{% csrf_token %}
+    <input type="hidden" name="action" value="generate"><input type="hidden" name="round" value="{{ round.seq }}">
+    {% if any_scores %}<label class="row muted"><input type="checkbox" name="confirm" value="yes"> Throw away entered scores and re-draw</label>{% endif %}
+    <button type="submit" {% if locked or not present_count %}disabled{% endif %}>{% if pairings %}Re-generate draw{% else %}Generate draw{% endif %}</button>
+  </form>
+
+  {% if unplaced_present %}<div class="msg warning" style="margin-top:12px">Present but not in the draw: {% for s in unplaced_present %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}. Add them below.</div>{% endif %}
+  {% if placed_absent %}<div class="msg warning" style="margin-top:12px">In the draw but marked absent: {% for s in placed_absent %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}. Remove them below or re-generate.</div>{% endif %}
+
+  {% if pairings %}
+  <details style="margin-top:14px" {% if unplaced_present or placed_absent %}open{% endif %}>
+    <summary style="cursor:pointer;font-weight:700">Change the draw by hand (late arrivals, someone leaves, odd numbers)</summary>
+    <form method="post" style="margin-top:10px">{% csrf_token %}
+      <input type="hidden" name="action" value="edit_draw"><input type="hidden" name="round" value="{{ round.seq }}">
+      <table>
+        <thead><tr><th>Speaker</th><th>Pair</th><th>Side</th></tr></thead>
+        <tbody>
+        {% for s in speakers %}{% if s.present or s.pair %}
+          <tr><td>{{ s.name }}{% if not s.present %} <span class="pill bad">absent</span>{% endif %}</td>
+            <td><select name="pair_{{ s.team.id }}"><option value="">— not debating</option>
+              {% for n in pair_choices %}<option value="{{ n }}" {% if s.pair == n %}selected{% endif %}>Pair {{ n }}</option>{% endfor %}</select></td>
+            <td><select name="side_{{ s.team.id }}">
+              <option value="1" {% if s.side == 1 %}selected{% endif %}>Proposition</option>
+              <option value="2" {% if s.side == 2 %}selected{% endif %}>Opposition</option>
+              <option value="3" {% if s.side == 3 %}selected{% endif %}>Third speaker</option></select></td></tr>
+        {% endif %}{% endfor %}
+        </tbody>
+      </table>
+      <p class="muted">A pair can have 2 speakers, or 3 when numbers are odd. Pairs whose line-up changes lose any scores already entered.</p>
+      <button type="submit" class="dark" {% if locked %}disabled{% endif %}>Save draw changes</button>
+    </form>
+  </details>
+  {% endif %}
+</section>
+
+{# ---------- 3. Motions + announce ---------- #}
+{% if pairings %}
+<section class="card" id="motions">
+  <h2><span class="step">3</span> Motions &amp; announce
+    {% if room_round.draw_announced %}<span class="pill ok">announced</span>{% else %}<span class="pill">not announced</span>{% endif %}</h2>
+  <p class="muted">Pick a motion for each pair, save, then announce. Announcing puts the draw on the public batch page.</p>
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="round" value="{{ round.seq }}">
+    {% for p in pairings %}
+      <div class="pair">
+        <div class="pair-head"><strong>Pair {{ p.seq }}</strong>
+          <span class="muted">{% for m in p.members %}{{ m.name }}{% if not forloop.last %} vs {% endif %}{% endfor %}</span></div>
+        <select name="motion_{{ p.id }}" style="width:100%" {% if locked %}disabled{% endif %}>
+          <option value="">— choose motion —</option>
+          {% for mo in motions %}<option value="{{ mo.id }}" {% if p.motion_id == mo.id %}selected{% endif %}>{{ mo.reference|default:"" }}{% if mo.reference %}: {% endif %}{{ mo.text|truncatechars:110 }}</option>{% endfor %}
+        </select>
+      </div>
+    {% endfor %}
+    {% if not motions %}<div class="msg error">No motions have been added for this round yet — ask the tab team.</div>{% endif %}
+    <div class="row">
+      <button type="submit" name="action" value="motions" class="ghost" {% if locked %}disabled{% endif %}>Save motions</button>
+      {% if room_round.draw_announced %}
+        <button type="submit" name="action" value="announce" {% if locked %}disabled{% endif %}>Save &amp; keep announced</button>
+        <button type="submit" name="action" value="unannounce" class="ghost" {% if locked %}disabled{% endif %}>Hide draw from public</button>
+      {% else %}
+        <button type="submit" name="action" value="announce" class="dark" {% if locked %}disabled{% endif %}>Save &amp; announce draw</button>
+      {% endif %}
+    </div>
+  </form>
+</section>
+
+{# ---------- 4. Results ---------- #}
+<section class="card" id="results">
+  <h2><span class="step">4</span> Results <span class="pill {% if scored_count == pairings|length %}ok{% endif %}">{{ scored_count }} / {{ pairings|length }} pairs scored</span></h2>
+  <p class="muted">Give feedback verbally. Enter one whole-number score out of {{ max_score }} per speaker. No draws — the winner must score higher.</p>
+  {% for p in pairings %}
+    <form method="post" class="pair" id="pair-{{ p.seq }}">{% csrf_token %}
+      <input type="hidden" name="action" value="score"><input type="hidden" name="round" value="{{ round.seq }}"><input type="hidden" name="pairing" value="{{ p.id }}"><input type="hidden" name="pairing_seq" value="{{ p.seq }}">
+      <div class="pair-head"><strong>Pair {{ p.seq }}</strong>{% if p.is_scored %}<span class="pill ok">saved</span>{% endif %}</div>
+      {% if p.motion %}<div class="motion" style="margin:0 0 10px">{{ p.motion.text }}</div>{% endif %}
+      <div class="vs">
+      {% for m in p.members %}
+        <div class="row"><div class="grow"><div class="side">{{ m.side_label }}</div><strong class="{% if p.winner and p.winner.team_id == m.team_id %}winner{% endif %}">{{ m.name }}{% if p.winner and p.winner.team_id == m.team_id %} ★{% endif %}</strong></div>
+          <input type="number" name="score_{{ m.team_id }}" min="0" max="{{ max_score }}" step="1" inputmode="numeric" pattern="[0-9]*" value="{{ m.score|default_if_none:'' }}" required {% if locked %}disabled{% endif %}></div>
+      {% endfor %}
+      </div>
+      <p class="msg danger js-err" hidden style="margin:10px 0 0"></p>
+      <p style="margin:10px 0 0"><button type="submit" {% if locked %}disabled{% endif %}>Save pair {{ p.seq }}</button></p>
+    </form>
+  {% endfor %}
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>Batch standings so far</h2>
+  <p class="muted">Visible to you only until the tab team releases results.</p>
+  <table><thead><tr><th>#</th><th>Speaker</th><th>Wins</th><th>Total</th></tr></thead><tbody>
+  {% for r in standings %}<tr><td>{{ r.rank }}</td><td>{{ r.name }}</td><td>{{ r.wins }}</td><td><strong>{{ r.total }}</strong></td></tr>{% endfor %}
+  </tbody></table>
+</section>
+{% endif %}
+<script>
+document.querySelectorAll('form[id^="pair-"]').forEach(function (form) {
+  form.addEventListener('submit', function (e) {
+    var vals = [].map.call(form.querySelectorAll('input[type=number]'), function (i) { return i.value.trim(); });
+    var err = '';
+    if (vals.some(function (v) { return !/^\d+$/.test(v); })) err = 'Whole numbers only, no decimals.';
+    else if (vals.some(function (v) { return +v > {{ max_score }}; })) err = 'Scores are out of {{ max_score }}.';
+    else if (new Set(vals).size !== vals.length) err = 'No draws: the winner must score higher than the loser.';
+    var box = form.querySelector('.js-err');
+    box.hidden = !err; box.textContent = err;
+    if (err) e.preventDefault();
+  });
+});
+</script>
+{% endblock %}

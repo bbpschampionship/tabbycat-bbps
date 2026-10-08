@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>{% block title %}{{ tournament.short_name|default:tournament.name }}{% endblock %}</title>
+<style>
+  :root { --ink:#16130d; --muted:#6b6458; --line:#e7e0d1; --bg:#fbf9f4; --card:#fff;
+          --gold:#b8912f; --gold-soft:#f6efdc; --ok:#1f7a4a; --ok-soft:#e5f4ec; --bad:#a3262a; --bad-soft:#fbe9e9; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  header.top { background:var(--ink); color:#fff; padding:14px 16px; border-bottom:3px solid var(--gold); }
+  header.top .eyebrow { color:var(--gold); font-size:12px; letter-spacing:.12em; text-transform:uppercase; font-weight:700; }
+  header.top h1 { margin:2px 0 0; font-size:20px; }
+  html { scroll-padding-top:70px; }
+  main { max-width:860px; margin:0 auto; padding:16px; }
+  h2 { font-size:18px; margin:0 0 10px; display:flex; align-items:center; gap:8px; }
+  h2 .step { background:var(--gold); color:#fff; border-radius:50%; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; font-size:14px; flex:none; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .muted { color:var(--muted); font-size:14px; }
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+  .tabs a { padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--ink); text-decoration:none; font-weight:600; font-size:14px; }
+  .tabs a.on { background:var(--gold); border-color:var(--gold); color:#fff; }
+  .msgs { position:sticky; top:8px; z-index:10; }
+  .msg { box-shadow:0 2px 10px rgba(0,0,0,.08); padding:10px 14px; border-radius:10px; margin-bottom:12px; font-weight:600; }
+  .msg.success { background:var(--ok-soft); color:var(--ok); }
+  .msg.error, .msg.danger { background:var(--bad-soft); color:var(--bad); }
+  .msg.warning, .msg.info { background:var(--gold-soft); color:#6d5414; }
+  button, .btn { font:inherit; font-weight:700; border:0; border-radius:10px; padding:11px 16px; background:var(--gold); color:#fff; cursor:pointer; text-decoration:none; display:inline-block; }
+  button.ghost, .btn.ghost { background:#fff; color:var(--ink); border:1px solid var(--line); }
+  button.dark { background:var(--ink); }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  select, input[type=number], input[type=text] { font:inherit; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; max-width:100%; }
+  input[type=number] { width:90px; font-size:18px; font-weight:700; text-align:center; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  th { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  .pill { display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:700; background:var(--gold-soft); color:#6d5414; }
+  .pill.ok { background:var(--ok-soft); color:var(--ok); }
+  .pill.bad { background:var(--bad-soft); color:var(--bad); }
+  .pair { border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:10px; background:#fff; }
+  .pair-head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+  .pair-head strong { font-size:17px; }
+  .vs { display:flex; flex-direction:column; gap:6px; }
+  .vs .side { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .motion { background:var(--gold-soft); border-radius:8px; padding:8px 10px; margin-top:8px; font-size:15px; }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .grow { flex:1 1 auto; }
+  .check { display:flex; align-items:center; gap:12px; padding:10px 4px; border-bottom:1px solid var(--line); font-size:17px; cursor:pointer; }
+  .check input { width:24px; height:24px; accent-color:var(--gold); }
+  .winner { color:var(--ok); font-weight:800; }
+  .qual td { background:var(--ok-soft); }
+  a { color:#7a5d14; }
+  footer { text-align:center; color:var(--muted); font-size:12px; padding:24px 16px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="eyebrow">{% block eyebrow %}{{ tournament.name }}{% endblock %}</div>
+  <h1>{% block heading %}{% endblock %}</h1>
+</header>
+<main>
+  {% if messages %}<div class="msgs">{% for message in messages %}<div class="msg {{ message.tags }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+  {% block content %}{% endblock %}
+</main>
+<footer>National School Debating Championship · Taivas</footer>
+</body>
+</html>

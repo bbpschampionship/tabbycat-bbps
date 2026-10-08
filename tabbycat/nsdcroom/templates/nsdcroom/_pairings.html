@@ -1,0 +1,15 @@
+{% for p in block.pairings %}
+  <div class="pair">
+    <div class="pair-head"><strong>Pair {{ p.seq }}</strong>{% if block.released and p.is_scored %}<span class="pill ok">result</span>{% endif %}</div>
+    <div class="vs">
+      {% for m in p.members %}
+        <div class="row"><div class="grow"><div class="side">{{ m.side_label }}</div>
+          <strong class="{% if block.released and p.winner.team_id == m.team_id %}winner{% endif %}">{{ m.name }}{% if block.released and p.winner.team_id == m.team_id %} ★ winner{% endif %}</strong></div>
+          {% if block.released and m.score is not None %}<strong style="font-size:20px">{{ m.score }}</strong>{% endif %}</div>
+      {% endfor %}
+    </div>
+    {% if p.motion %}<div class="motion"><span class="muted">Motion:</span> {{ p.motion.text }}</div>{% endif %}
+  </div>
+{% empty %}
+  <p class="muted">Draw not announced yet.</p>
+{% endfor %}
