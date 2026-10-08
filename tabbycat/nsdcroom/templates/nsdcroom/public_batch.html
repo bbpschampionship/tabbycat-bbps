@@ -2,7 +2,7 @@
 {% block title %}{{ label }}{% endblock %}
 {% block eyebrow %}NSDC 2026 · Online Qualifiers · Batch {{ room.code }}{% endblock %}
 {% block heading %}{{ room.name }}{% endblock %}
-{% block meta %}<div class="meta">Batch code {{ room.code }}{% if profile %} · Track {{ profile.track }} · {{ profile.time_slot }} · {{ profile.grades_label }}{% endif %}</div>{% endblock %}
+{% block meta %}<div class="meta">Batch code {{ room.code }}{% if profile %} · {{ track.name }} · {{ profile.grades_label }}{% endif %}</div>{% endblock %}
 {% block content %}
 
 {% if standings %}

@@ -29,16 +29,30 @@
   .hit .go{font-weight:800;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-dd);white-space:nowrap}
   .none{display:none;text-align:center;font-family:var(--serif);font-style:italic;font-size:16px;padding:12px}
   .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
-  .slot{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:linear-gradient(180deg,#FFFFFF,#FFFDF5);text-align:center}
-  .slot .k{font-size:10.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-d)}
-  .slot .v{font-weight:900;font-size:22px;color:var(--ink-strong);margin:4px 0 2px}
-  .slot .s{font-family:var(--serif);font-style:italic;font-size:15px}
   .steps{counter-reset:s;display:grid;gap:12px}
   .stp{display:flex;gap:14px;align-items:flex-start}
   .stp::before{counter-increment:s;content:counter(s);flex:none;width:32px;height:32px;border-radius:50%;background:var(--gm);border:1px solid var(--gold-d);
        display:grid;place-items:center;font-weight:900;font-size:14px;color:var(--ink-strong)}
   .stp strong{display:block;color:var(--ink-strong);font-size:15.5px}
   .stp span{font-size:14px}
+  .sched{padding:6px 18px 16px}
+  .srow{display:grid;grid-template-columns:96px 1fr auto;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
+  .srow .tm{font-weight:800;font-size:18px;color:var(--ink-strong);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .srow .tm i{font-style:normal;font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--gold-d)}
+  .srow .ev{font-weight:900;font-size:19px;color:var(--ink-strong);text-transform:uppercase;letter-spacing:.01em}
+  .srow .ev.soft{font-weight:700;color:var(--gold-d)}
+  .srow .pl{font-size:10.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-d);text-align:right}
+  .srow.hi{background:var(--gm);border:1px solid var(--gold-d);border-radius:12px;padding:15px 14px;margin:10px -6px 0}
+  .srow.hi .ev,.srow.hi .tm,.srow.hi .tm i,.srow.hi .pl{color:var(--ink-strong)}
+  .sfoot{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);text-align:center}
+  .sfoot strong{display:block;font-weight:900;font-size:15px;color:var(--ink-strong);text-transform:uppercase;letter-spacing:.02em}
+  .sfoot span{display:block;font-size:12.5px;color:var(--gold-d);margin-top:4px}
+  @media (max-width:520px){ .srow{grid-template-columns:78px 1fr} .srow .pl{grid-column:2;text-align:left;margin-top:-8px} .srow .ev{font-size:16.5px} .srow .tm{font-size:16px} }
+  .must{display:flex;gap:14px;align-items:flex-start;margin:4px 0 8px;padding:16px 18px;border-radius:14px;
+        background:linear-gradient(180deg,#FFF9E8,#FBF0D2);border:1.5px solid var(--gold);border-left:6px solid var(--gold-d)}
+  .must .ic{flex:none;width:30px;height:30px;border-radius:50%;background:var(--ink-strong);color:#FFF6DC;display:grid;place-items:center;font-weight:900}
+  .must strong{display:block;font-weight:900;font-size:16.5px;color:var(--ink-strong)}
+  .must span{display:block;font-size:14px;color:var(--ink);margin-top:2px}
   .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px}
   .tile{display:block;text-decoration:none;border:1.5px solid var(--gold);border-top-width:4px;border-radius:14px;padding:16px 18px;
         background:var(--white);color:inherit;position:relative}
@@ -60,13 +74,31 @@
     {% for s in students %}
     <a class="hit" hidden href="{% if s.room %}{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=s.room.id %}{% else %}#{% endif %}" data-k="{{ s.name|lower }} {{ s.school|lower }}">
       <span class="code">{{ s.room.code }}</span>
-      <span class="who"><strong>{{ s.name }}</strong><span class="where">{{ s.school }}{% if s.room %} · Batch {{ s.room.code }} · {{ s.room.name }}{% endif %}{% if s.profile %} · {{ s.profile.time_slot }}{% endif %}</span></span>
+      <span class="who"><strong>{{ s.name }}</strong><span class="where">{{ s.school }}{% if s.room %} · Batch {{ s.room.code }} · {{ s.room.name }}{% endif %}</span></span>
       <span class="go">View →</span>
     </a>
     {% endfor %}
     <div class="none" id="none">No student found. Try part of the first name, or the school.</div>
   </div>
 </section>
+
+<div class="sec"><h2>Day schedule</h2><span class="k">Sunday, 11 October · all times IST</span><span class="r"></span></div>
+<section class="card sched">
+  <div class="srow"><span class="tm">8:00 <i>AM</i></span><span class="ev soft">Check-ins</span><span class="pl">Zoom</span></div>
+  <div class="srow"><span class="tm">8:15 <i>AM</i></span><span class="ev soft">Briefings</span><span class="pl">Main room</span></div>
+  <div class="srow"><span class="tm">8:30 <i>AM</i></span><span class="ev">Round 1</span><span class="pl">Breakout rooms</span></div>
+  <div class="srow"><span class="tm">11:20 <i>AM</i></span><span class="ev">Round 2</span><span class="pl">Breakout rooms</span></div>
+  <div class="srow"><span class="tm">2:00 <i>PM</i></span><span class="ev soft">Lunch break</span><span class="pl">30 min</span></div>
+  <div class="srow"><span class="tm">2:30 <i>PM</i></span><span class="ev">Round 3</span><span class="pl">Breakout rooms</span></div>
+  <div class="srow hi"><span class="tm">6:00 <i>PM</i></span><span class="ev">Results announcement</span><span class="pl">Live on Zoom</span></div>
+  <div class="sfoot">
+    <strong>Top 16 per track qualify for the in-person outrounds</strong>
+    <span>Primary Gr 3–5 · Junior Gr 6–8 · Senior Gr 9–12 · All times IST · Live on Zoom</span>
+  </div>
+</section>
+
+<div class="must"><span class="ic">!</span><div><strong>Every student must take part in all 3 rounds.</strong>
+  <span>Round 1 at 8:30 AM, Round 2 at 11:20 AM and Round 3 at 2:30 PM. Rankings are based on the total score across all three rounds.</span></div></div>
 
 <div class="sec"><h2>Explore</h2><span class="r"></span></div>
 <div class="tiles">
@@ -78,21 +110,13 @@
   <a class="tile" href="{% url 'nsdcroom-public-standings' tournament_slug=tournament.slug %}"><span class="t">Rankings</span><span class="d">{% if standings_released %}Top {{ release.qualify_count }} per track qualify{% else %}Published after the final round{% endif %}</span></a>
 </div>
 
-<div class="sec"><h2>On the day</h2><span class="k">Sunday, 11 October</span><span class="r"></span></div>
-<div class="grid3">
-  {% for sl in slots %}
-  <div class="slot"><div class="k">{{ sl.name }}</div><div class="v">{{ sl.label }}</div><div class="s">{{ sl.rooms|length }} batches</div></div>
-  {% endfor %}
-</div>
-<p class="muted" style="text-align:center;margin:10px 0 0">Search your child's name above to see their batch code and time slot.</p>
-
 <div class="sec"><h2>How the qualifier works</h2><span class="r"></span></div>
 <section class="card">
   <div class="steps">
     <div class="stp"><div><strong>Attendance</strong><span>Your batch's judge marks everyone present at the start of each round.</span></div></div>
-    <div class="stp"><div><strong>Three rounds of 1v1 debate</strong><span>The judge announces the pairs and each pair's motion. Round 1 is random; Rounds 2 and 3 pair speakers on similar scores.</span></div></div>
+    <div class="stp"><div><strong>Three rounds of 1v1 debate — all compulsory</strong><span>Every student must debate in all three rounds. The judge announces the pairs and each pair's motion. Round 1 is random; Rounds 2 and 3 pair speakers on similar scores.</span></div></div>
     <div class="stp"><div><strong>Scored out of 100</strong><span>Feedback is given verbally. Each speaker gets one score out of 100, and the winner of every debate always scores higher.</span></div></div>
-    <div class="stp"><div><strong>Top {{ release.qualify_count|default:16 }} in each track qualify</strong><span>Rankings by total score across the three rounds decide who reaches the Grand Finale at IIT Bombay on 25 October.</span></div></div>
+    <div class="stp"><div><strong>Top {{ release.qualify_count|default:16 }} in each track qualify</strong><span>Rankings by total score across the three rounds decide who goes through to the in-person outrounds. Results are announced at 6:00 PM.</span></div></div>
   </div>
 </section>
 

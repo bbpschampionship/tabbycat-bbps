@@ -1,13 +1,13 @@
 {% extends "nsdcroom/base.html" %}
 {% block title %}Rankings{% endblock %}
 {% block heading %}Rankings{% endblock %}
-{% block meta %}<div class="meta">{% if release %}Top {{ release.qualify_count }} in each track qualify for the Grand Finale at IIT Bombay.{% else %}Published after all rounds are complete.{% endif %}</div>{% endblock %}
+{% block meta %}<div class="meta">{% if release %}Top {{ release.qualify_count }} in each track qualify for the in-person outrounds.{% else %}Published after all rounds are complete.{% endif %}</div>{% endblock %}
 {% block content %}
 {% if not tracks %}
   <section class="card" style="text-align:center"><div style="font-family:var(--serif);font-style:italic;font-size:20px">Rankings will be published after all rounds are complete.</div></section>
 {% else %}
 {% for tr in tracks %}
-<div class="sec"><h2>{% if tr.track %}Track {{ tr.track }}{% else %}Rankings{% endif %}</h2><span class="r"></span></div>
+<div class="sec"><h2>{{ tr.name|default:"Rankings" }}</h2><span class="k">{{ tr.grades }}</span><span class="r"></span></div>
 <section class="card">
   <div class="scroll">
   <table><thead><tr><th>#</th><th>Student</th><th>Batch</th>{% for r in rounds %}<th>{{ r.abbreviation }}</th>{% endfor %}<th>Wins</th><th>Total</th><th></th></tr></thead><tbody>

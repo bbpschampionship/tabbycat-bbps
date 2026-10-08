@@ -300,6 +300,7 @@ class PublicBatchView(TournamentView):
         return render(request, 'nsdcroom/public_batch.html', {
             'tournament': self.tournament, 'room': room, 'rounds': rounds, 'nav': 'batches',
             'label': logic.batch_label(room), 'profile': getattr(room, 'nsdc_batch', None),
+            'track': logic.split_track(getattr(getattr(room, 'nsdc_batch', None), 'track', '')),
             'blocks': _public_round_blocks(self.tournament, room, rounds, teams),
             'students': students,
             'released_rounds': released_rounds,
@@ -334,7 +335,7 @@ class PublicStandingsView(TournamentView):
                 for r in rows:
                     r['batch'] = logic.batch_label(r['team'].institution) if r['team'].institution else ''
                     r['qualified'] = r['rank'] <= release.qualify_count
-                tracks.append({'track': track, 'rows': rows})
+                tracks.append({'track': track, **logic.split_track(track), 'rows': rows})
         return render(request, 'nsdcroom/public_standings.html', {
             'tournament': self.tournament, 'tracks': tracks, 'release': release, 'rounds': self.rounds(),
             'nav': 'rankings'})

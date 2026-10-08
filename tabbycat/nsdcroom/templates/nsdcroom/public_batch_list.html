@@ -14,7 +14,7 @@
 {% endif %}
 
 {% for tr in tracks %}
-  <div class="sec"><h2>{% if tr.letter %}Track {{ tr.letter }}{% else %}Batches{% endif %}</h2><span class="k">{{ tr.grades }}</span><span class="r"></span></div>
+  <div class="sec"><h2>{{ tr.name|default:"Batches" }}</h2><span class="k">{{ tr.grades }}</span><span class="r"></span></div>
   <div class="bgrid">
   {% for row in tr.rooms %}
   <section class="card bcard">
@@ -23,7 +23,7 @@
       <div class="grow">
         <a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=row.room.id %}" style="text-decoration:none">
           <strong style="font-size:18px;color:var(--ink-strong)">{{ row.room.name }}</strong></a>
-        <div class="muted">Batch {{ row.room.code }}{% if row.profile %} · {{ row.profile.time_slot }} · {{ row.profile.grades_label }}{% endif %} · {{ row.count }} speakers</div>
+        <div class="muted">Batch {{ row.room.code }}{% if row.profile %} · {{ row.profile.grades_label }}{% endif %} · {{ row.count }} speakers</div>
       </div>
       {% if mode == 'rounds' and row.block.announced %}<span class="pill gold">Draw live</span>{% endif %}
     </div>

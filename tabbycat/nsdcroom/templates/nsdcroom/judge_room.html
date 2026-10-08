@@ -1,6 +1,6 @@
 {% extends "nsdcroom/base.html" %}
 {% block title %}Judge · {{ batch_label|default:"No batch" }}{% endblock %}
-{% block eyebrow %}Judge console{% if judge.name %} · {{ judge.name }}{% endif %}{% if room.nsdc_batch.time_slot %} · {{ room.nsdc_batch.time_slot }}{% endif %}{% endblock %}
+{% block eyebrow %}Judge console{% if judge.name %} · {{ judge.name }}{% endif %}{% endblock %}
 {% block heading %}{{ batch_label|default:"No batch assigned" }}{% endblock %}
 {% block content %}
 {% if not room %}
