@@ -1,15 +1,17 @@
 {% for p in block.pairings %}
   <div class="pair">
-    <div class="pair-head"><strong>Pair {{ p.seq }}</strong>{% if block.released and p.is_scored %}<span class="pill ok">result</span>{% endif %}</div>
+    <div class="pair-head"><strong>Pair {{ p.seq }}</strong>{% if block.released and p.is_scored %}<span class="pill ok">Result</span>{% endif %}</div>
     <div class="vs">
       {% for m in p.members %}
+        {% if not forloop.first %}<div class="vsmark">vs</div>{% endif %}
         <div class="row"><div class="grow"><div class="side">{{ m.side_label }}</div>
-          <strong class="{% if block.released and p.winner.team_id == m.team_id %}winner{% endif %}">{{ m.name }}{% if block.released and p.winner.team_id == m.team_id %} ★ winner{% endif %}</strong>{% if m.school %}<div class="muted">{{ m.school }}</div>{% endif %}</div>
-          {% if block.released and m.score is not None %}<strong style="font-size:20px">{{ m.score }}</strong>{% endif %}</div>
+          <strong class="{% if block.released and p.winner.team_id == m.team_id %}winner{% endif %}">{{ m.name }}</strong>{% if block.released and p.winner.team_id == m.team_id %}<span class="crown">★ Winner</span>{% endif %}
+          {% if m.school %}<div class="muted">{{ m.school }}</div>{% endif %}</div>
+          {% if block.released and m.score is not None %}<span class="num" style="font-size:24px">{{ m.score }}</span>{% endif %}</div>
       {% endfor %}
     </div>
-    {% if p.motion %}<div class="motion"><span class="muted">Motion:</span> {{ p.motion.text }}</div>{% endif %}
+    {% if p.motion %}<div class="motion"><span class="lbl">Motion</span>{{ p.motion.text }}</div>{% endif %}
   </div>
 {% empty %}
-  <p class="muted">Draw not announced yet.</p>
+  <p class="muted" style="font-family:var(--serif);font-style:italic;font-size:16px;margin:4px 0 0">The draw will appear here once the judge announces it.</p>
 {% endfor %}

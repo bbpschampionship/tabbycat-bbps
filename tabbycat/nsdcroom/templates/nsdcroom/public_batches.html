@@ -1,19 +1,45 @@
-{% extends "nsdcroom/base.html" %}
-{% block title %}Batches · {{ tournament.short_name|default:tournament.name }}{% endblock %}
-{% block heading %}Batches &amp; draw{% endblock %}
+{% extends "nsdcroom/base.html" %}{% load static %}
+{% block title %}Batches &amp; draw{% endblock %}
+{% block masthead %}
+<header class="mast hero">
+  <div class="coins">
+    <span class="coin"><img src="{% static 'nsdc/logo_taivas.png' %}" alt="Taivas Debate Club"></span>
+    <span class="coin"><img src="{% static 'nsdc/logo_iitb.png' %}" alt="IIT Bombay Debate Society"></span>
+  </div>
+  <div class="org">Taivas Debate Club<span class="x">×</span><span class="iitb">IIT Bombay Debate Society</span></div>
+  <div class="wordmark">NATIONAL<br>SPEECH &amp; DEBATE</div>
+  <div class="champ"><span class="r"></span>CHAMPIONSHIP<span class="r"></span></div>
+  <div class="zone"><span class="pill">Online Qualifiers</span><span class="t">Sunday · 11 October 2026</span></div>
+  <div class="sub">{{ rooms|length }} batches · {{ student_count }} speakers · 3 rounds of 1v1 debate · Grand Finale at IIT Bombay</div>
+</header>
+<div class="orn"><span class="l"></span><span class="d"></span><span class="l"></span></div>
+{% endblock %}
 {% block content %}
 <nav class="tabs">
   {% for r in rounds %}<a href="?round={{ r.seq }}" class="{% if r == round %}on{% endif %}">{{ r.name }}</a>{% endfor %}
-  <a href="{% url 'nsdcroom-public-students' tournament_slug=tournament.slug %}">Find a student</a>
-  {% if standings_released %}<a href="{% url 'nsdcroom-public-standings' tournament_slug=tournament.slug %}">Final rankings</a>{% endif %}
+  <a href="{% url 'nsdcroom-public-students' tournament_slug=tournament.slug %}">Find your batch</a>
+  {% if standings_released %}<a href="{% url 'nsdcroom-public-standings' tournament_slug=tournament.slug %}">Rankings</a>{% endif %}
 </nav>
-{% for row in rooms %}
-  <section class="card">
-    <div class="pair-head"><h2 style="margin:0"><a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=row.room.id %}">{{ row.label }}</a></h2>
-      <span class="muted">{{ row.count }} speakers</span></div>
-    {% if row.profile %}<p class="muted" style="margin:-4px 0 10px">Track {{ row.profile.track }} · {{ row.profile.time_slot }}</p>{% endif %}
-    {% with block=row.block %}{% include "nsdcroom/_pairings.html" %}{% endwith %}
+
+{% for tr in tracks %}
+  <div class="sec"><h2>{% if tr.letter %}Track {{ tr.letter }}{% else %}Batches{% endif %}</h2><span class="k">{{ tr.grades }}</span><span class="r"></span></div>
+  <div class="bgrid">
+  {% for row in tr.rooms %}
+  <section class="card bcard">
+    <div class="row" style="align-items:flex-start;margin-bottom:10px">
+      <span class="code">{{ row.room.code }}</span>
+      <div class="grow">
+        <a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=row.room.id %}" style="text-decoration:none">
+          <strong style="font-size:18px;color:var(--ink-strong)">{{ row.room.name }}</strong></a>
+        <div class="muted">Batch {{ row.room.code }}{% if row.profile %} · {{ row.profile.time_slot }} · {{ row.profile.grades_label }}{% endif %} · {{ row.count }} speakers</div>
+      </div>
+      {% if row.block.released and row.block.pairings %}<span class="pill ok">Results out</span>{% elif row.block.announced %}<span class="pill gold">Draw live</span>{% endif %}
+    </div>
+    {% with block=row.block %}{% include "nsdcroom/_pairings_compact.html" %}{% endwith %}
+    <p class="more"><a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=row.room.id %}" style="font-weight:800;font-size:12px;letter-spacing:.12em;text-transform:uppercase">Students &amp; full results →</a></p>
   </section>
+  {% endfor %}
+  </div>
 {% empty %}
   <div class="card">No batches yet.</div>
 {% endfor %}

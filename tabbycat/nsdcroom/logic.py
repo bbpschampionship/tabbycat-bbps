@@ -31,6 +31,15 @@ def batch_track(room):
     return profile.track if profile else ''
 
 
+def split_track(track):
+    """'B (Grade 6-8)' -> {'letter': 'B', 'grades': 'Grades 6–8'}"""
+    import re
+    m = re.match(r'\s*([A-Z])\s*\((?:Grades?)\s*([\d]+)\s*-\s*(\d+)\)', track or '')
+    if not m:
+        return {'letter': track, 'grades': ''}
+    return {'letter': m.group(1), 'grades': f"Grades {m.group(2)}–{m.group(3)}"}
+
+
 def label_members(pairings, teams):
     by_id = {t.id: t for t in teams}
     for p in pairings:

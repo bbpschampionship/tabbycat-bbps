@@ -1,15 +1,16 @@
 {% extends "nsdcroom/base.html" %}
-{% block title %}Students · {{ tournament.short_name|default:tournament.name }}{% endblock %}
+{% block title %}Find your batch{% endblock %}
 {% block heading %}Find your batch{% endblock %}
+{% block meta %}<div class="meta">Type a student's name or school to see their batch and batch code.</div>{% endblock %}
 {% block content %}
-<nav class="tabs"><a href="{% url 'nsdcroom-public-batches' tournament_slug=tournament.slug %}">← Batches &amp; draw</a></nav>
+<nav class="tabs left"><a href="{% url 'nsdcroom-public-batches' tournament_slug=tournament.slug %}">← All batches</a></nav>
 <section class="card">
-  <input type="text" id="q" placeholder="Type a student or school name…" autocomplete="off" style="width:100%;font-size:17px">
-  <p class="muted" id="count" style="margin:8px 0 0">{{ students|length }} students</p>
-  <div style="overflow-x:auto">
+  <input type="text" id="q" placeholder="Search {{ students|length }} students…" autocomplete="off" style="width:100%;font-size:17px;padding:14px 16px">
+  <p class="muted" id="count" style="margin:10px 0 4px">{{ students|length }} students</p>
+  <div class="scroll">
   <table id="list"><thead><tr><th>Student</th><th>School</th><th>Batch</th><th>Code</th></tr></thead><tbody>
   {% for s in students %}<tr><td><strong>{{ s.name }}</strong></td><td>{{ s.school }}</td>
-    <td style="white-space:nowrap">{% if s.room %}<a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=s.room.id %}">{{ s.room.name }}</a>{% endif %}</td><td>{{ s.room.code }}</td></tr>{% endfor %}
+    <td style="white-space:nowrap">{% if s.room %}<a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=s.room.id %}">{{ s.room.name }}</a>{% endif %}</td><td><span class="pill">{{ s.room.code }}</span></td></tr>{% endfor %}
   </tbody></table>
   </div>
 </section>
@@ -18,7 +19,7 @@ var q = document.getElementById('q'), rows = [].slice.call(document.querySelecto
 q.addEventListener('input', function () {
   var v = q.value.trim().toLowerCase(), n = 0;
   rows.forEach(function (r) { var show = !v || r.textContent.toLowerCase().indexOf(v) !== -1; r.hidden = !show; if (show) n++; });
-  document.getElementById('count').textContent = n + ' students';
+  document.getElementById('count').textContent = n + (n === 1 ? ' student' : ' students');
 });
 </script>
 {% endblock %}

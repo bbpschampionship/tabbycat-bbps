@@ -212,8 +212,13 @@ class PublicBatchesView(TournamentView):
             rooms.append({'room': room, 'label': logic.batch_label(room), 'profile': getattr(room, 'nsdc_batch', None),
                           'count': len(teams), 'block': block})
         release = TournamentRelease.objects.filter(tournament=self.tournament).first()
+        tracks = {}
+        for row in rooms:
+            tracks.setdefault(row['profile'].track if row['profile'] else '', []).append(row)
         return render(request, 'nsdcroom/public_batches.html', {
             'tournament': self.tournament, 'rounds': rounds, 'round': round, 'rooms': rooms,
+            'tracks': [{'track': k, **logic.split_track(k), 'rooms': v} for k, v in sorted(tracks.items())],
+            'student_count': sum(r['count'] for r in rooms),
             'standings_released': bool(release and release.standings_released)})
 
 
@@ -226,6 +231,7 @@ class PublicBatchView(TournamentView):
             raise Http404
         rounds = self.rounds()
         released_rounds = [r for r in rounds if logic.results_released(r)]
+        standings = logic.ranked(teams, released_rounds) if released_rounds else []
         students = sorted(({'name': logic.team_name(t), 'school': logic.team_school(t)} for t in teams),
                           key=lambda s: s['name'].lower())
         return render(request, 'nsdcroom/public_batch.html', {
@@ -234,7 +240,7 @@ class PublicBatchView(TournamentView):
             'blocks': _public_round_blocks(self.tournament, room, rounds, teams),
             'students': students,
             'released_rounds': released_rounds,
-            'standings': logic.ranked(teams, released_rounds) if released_rounds else []})
+            'standings': standings if any(r['debated'] for r in standings) else []})
 
 
 class PublicStudentsView(TournamentView):

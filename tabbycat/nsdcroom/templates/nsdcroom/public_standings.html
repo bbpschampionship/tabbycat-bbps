@@ -1,20 +1,21 @@
 {% extends "nsdcroom/base.html" %}
-{% block title %}Rankings · {{ tournament.short_name|default:tournament.name }}{% endblock %}
+{% block title %}Rankings{% endblock %}
 {% block heading %}Rankings{% endblock %}
+{% block meta %}<div class="meta">{% if release %}Top {{ release.qualify_count }} in each track qualify for the Grand Finale at IIT Bombay.{% else %}Published after all rounds are complete.{% endif %}</div>{% endblock %}
 {% block content %}
-<nav class="tabs"><a href="{% url 'nsdcroom-public-batches' tournament_slug=tournament.slug %}">← Batches &amp; draw</a></nav>
+<nav class="tabs left"><a href="{% url 'nsdcroom-public-batches' tournament_slug=tournament.slug %}">← All batches</a></nav>
 {% if not tracks %}
-  <div class="card">Rankings will be published after all rounds are complete.</div>
+  <section class="card" style="text-align:center"><div style="font-family:var(--serif);font-style:italic;font-size:20px">Rankings will be published after all rounds are complete.</div></section>
 {% else %}
 {% for tr in tracks %}
+<div class="sec"><h2>{% if tr.track %}Track {{ tr.track }}{% else %}Rankings{% endif %}</h2><span class="r"></span></div>
 <section class="card">
-  <h2>{% if tr.track %}Track {{ tr.track }}{% else %}Rankings{% endif %}</h2>
-  <p class="muted">Ranked by total score across all rounds, then wins. Top {{ release.qualify_count }} qualify.</p>
-  <div style="overflow-x:auto">
-  <table><thead><tr><th>#</th><th>Student</th><th>School</th><th>Batch</th>{% for r in rounds %}<th>{{ r.abbreviation }}</th>{% endfor %}<th>Wins</th><th>Total</th><th></th></tr></thead><tbody>
-  {% for row in tr.rows %}<tr class="{% if row.qualified %}qual{% endif %}"><td>{{ row.rank }}</td><td><strong>{{ row.name }}</strong></td><td class="muted">{{ row.school }}</td><td class="muted" style="white-space:nowrap">{{ row.batch }}</td>
-    {% for r in rounds %}<td>{% for rid, sc in row.by_round.items %}{% if rid == r.id %}{{ sc }}{% endif %}{% endfor %}</td>{% endfor %}
-    <td>{{ row.wins }}</td><td><strong>{{ row.total }}</strong></td><td>{% if row.qualified %}<span class="pill ok">Qualified</span>{% endif %}</td></tr>{% endfor %}
+  <div class="scroll">
+  <table><thead><tr><th>#</th><th>Student</th><th>Batch</th>{% for r in rounds %}<th>{{ r.abbreviation }}</th>{% endfor %}<th>Wins</th><th>Total</th><th></th></tr></thead><tbody>
+  {% for row in tr.rows %}<tr class="{% if row.qualified %}qual{% endif %}"><td><span class="rank">{{ row.rank }}</span></td>
+    <td><strong>{{ row.name }}</strong>{% if row.school %}<div class="muted">{{ row.school }}</div>{% endif %}</td><td class="muted" style="white-space:nowrap">{{ row.batch }}</td>
+    {% for r in rounds %}<td class="num">{% for rid, sc in row.by_round.items %}{% if rid == r.id %}{{ sc }}{% endif %}{% endfor %}</td>{% endfor %}
+    <td class="num">{{ row.wins }}</td><td class="num" style="font-size:19px">{{ row.total }}</td><td>{% if row.qualified %}<span class="pill gold">Qualified</span>{% endif %}</td></tr>{% endfor %}
   </tbody></table>
   </div>
 </section>

@@ -1,0 +1,11 @@
+{% for p in block.pairings %}
+  <div class="cpair">
+    <div class="cp-n">{{ p.seq }}</div>
+    <div class="grow">
+      <div class="cp-names">{% for m in p.members %}{% if not forloop.first %}<span class="cp-vs">vs</span>{% endif %}<span class="{% if block.released and p.winner.team_id == m.team_id %}winner{% endif %}">{{ m.name }}{% if block.released and m.score is not None %} <b class="cp-sc">{{ m.score }}</b>{% endif %}{% if block.released and p.winner.team_id == m.team_id %}<span class="crown">★</span>{% endif %}</span>{% endfor %}</div>
+      {% if p.motion %}<div class="cp-motion">{{ p.motion.text }}</div>{% endif %}
+    </div>
+  </div>
+{% empty %}
+  <p class="muted" style="font-family:var(--serif);font-style:italic;font-size:16px;margin:0">The draw will appear here once the judge announces it.</p>
+{% endfor %}

@@ -105,6 +105,15 @@ class BatchProfile(models.Model):
     time_slot = models.CharField(max_length=40, blank=True)
     grades = models.CharField(max_length=40, blank=True)
 
+    @property
+    def grades_label(self):
+        """'3 to 4' -> 'Grades 3–4', '5th' -> 'Grade 5'"""
+        g = self.grades.strip()
+        if ' to ' in g:
+            return "Grades " + g.replace(' to ', '–')
+        digits = ''.join(c for c in g if c.isdigit())
+        return f"Grade {digits}" if digits else g
+
 
 class StudentProfile(models.Model):
     team = models.OneToOneField('participants.Team', models.CASCADE, related_name='nsdc_student')

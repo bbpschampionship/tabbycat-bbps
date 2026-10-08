@@ -111,10 +111,10 @@ class JudgeFlowTests(RoomTestBase):
 
         # scores hidden publicly until released
         public = self.client.get(reverse('nsdcroom-public-batch', kwargs={'tournament_slug': self.t.slug, 'room_id': self.room.id}))
-        self.assertNotContains(public, '★ winner')
+        self.assertNotContains(public, '★ Winner')
         RoundRelease.objects.create(round=self.rounds[0], results_released=True)
         public = self.client.get(reverse('nsdcroom-public-batch', kwargs={'tournament_slug': self.t.slug, 'room_id': self.room.id}))
-        self.assertContains(public, '★ winner')
+        self.assertContains(public, '★ Winner')
         self.assertContains(public, 'Batch ranking')
 
         # released round is locked for the judge
