@@ -1,4 +1,4 @@
-{% extends "nsdcroom/base.html" %}
+{% extends "nsdcroom/base.html" %}{% load nsdc_tags %}
 {% block title %}Judges{% endblock %}
 {% block heading %}Judges &amp; contacts{% endblock %}
 {% block meta %}<div class="meta">One judge runs each batch. If you need help on the day, call your batch's judge or point of contact.</div>{% endblock %}
@@ -6,7 +6,7 @@
 <section class="card">
   <div class="scroll"><table><thead><tr><th>Code</th><th>Batch</th><th>Judge</th><th>Point of contact</th></tr></thead><tbody>
   {% for r in rows %}<tr><td><span class="pill">{{ r.room.code }}</span></td>
-    <td style="white-space:nowrap"><a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=r.room.id %}"><strong>{{ r.room.name }}</strong></a></td>
+    <td style="white-space:nowrap"><a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=r.room.id %}"><strong>{{ r.room|batchname }}</strong></a></td>
     <td>{% for j in r.judges %}<div><strong>{{ j.name }}</strong>{% if j.phone %}<br><a href="tel:{{ j.phone|cut:' ' }}" style="white-space:nowrap">{{ j.phone }}</a>{% endif %}</div>{% empty %}<span style="font-family:var(--serif);font-style:italic;font-size:16px">To be announced</span>{% endfor %}</td>
     <td>{% if r.profile.poc_name %}<strong>{{ r.profile.poc_name }}</strong>{% if r.profile.poc_phone %}<br><a href="tel:{{ r.profile.poc_phone|cut:' ' }}" style="white-space:nowrap">{{ r.profile.poc_phone }}</a>{% endif %}{% else %}<span style="font-family:var(--serif);font-style:italic;font-size:16px">To be announced</span>{% endif %}</td></tr>{% endfor %}
   </tbody></table></div>

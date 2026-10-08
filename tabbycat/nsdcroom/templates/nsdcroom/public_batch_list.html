@@ -1,4 +1,4 @@
-{% extends "nsdcroom/base.html" %}
+{% extends "nsdcroom/base.html" %}{% load nsdc_tags %}
 {% block title %}{% if mode == 'rounds' %}Rounds{% elif mode == 'results' %}Results{% else %}Batches{% endif %}{% endblock %}
 {% block heading %}{% if mode == 'rounds' %}Rounds{% elif mode == 'results' %}Results{% else %}Batches{% endif %}{% endblock %}
 {% block meta %}<div class="meta">{% if mode == 'rounds' %}Pairs and motions for each batch, as soon as the judge announces them.{% elif mode == 'results' %}Scores and winners, published once the round is complete.{% else %}{{ rooms|length }} batches · {{ student_count }} speakers · tap a batch to see its students.{% endif %}</div>{% endblock %}
@@ -22,8 +22,8 @@
       <span class="code">{{ row.room.code }}</span>
       <div class="grow">
         <a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=row.room.id %}" style="text-decoration:none">
-          <strong style="font-size:18px;color:var(--ink-strong)">{{ row.room.name }}</strong></a>
-        <div class="muted">Batch {{ row.room.code }}{% if row.profile %} · {{ row.profile.grades_label }}{% endif %} · {{ row.count }} speakers</div>
+          <strong style="font-size:18px;color:var(--ink-strong)">{{ row.room|batchname }}</strong></a>
+        <div class="muted">{% if row.profile %}{{ row.profile.grades_label }}{% endif %} · {{ row.count }} speakers</div>
       </div>
       {% if mode == 'rounds' and row.block.announced %}<span class="pill gold">Draw live</span>{% endif %}
     </div>

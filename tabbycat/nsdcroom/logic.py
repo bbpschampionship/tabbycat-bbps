@@ -26,6 +26,15 @@ def batch_label(room):
     return f"{room.name} · Batch {room.code}" if room.code else room.name
 
 
+def public_batch_name(room):
+    """'A | Afternoon | 1' (code 03) -> 'Primary · Batch 03'. The stored names carry the training-session
+    time of day, which parents read as a joining time; the qualifier itself is full-day for everyone."""
+    if room is None:
+        return ''
+    track = split_track(batch_track(room))
+    return f"{track['name']} · Batch {room.code}" if track.get('grades') else f"Batch {room.code}"
+
+
 def batch_track(room):
     profile = getattr(room, 'nsdc_batch', None)
     return profile.track if profile else ''

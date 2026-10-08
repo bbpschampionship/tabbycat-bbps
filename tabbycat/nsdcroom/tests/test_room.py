@@ -236,8 +236,9 @@ class ProfileDisplayTests(RoomTestBase):
         self.judge.name = ''
         self.judge.save()
         public = self.client.get(reverse('nsdcroom-public-batch', kwargs={'tournament_slug': self.t.slug, 'room_id': self.room.id}))
-        for text in ('Kid 1', 'Shalom Presidency School', 'Batch A', 'Batch 07'):
+        for text in ('Kid 1', 'Shalom Presidency School', 'Junior · Batch 07', 'check-in 8:00 AM'):
             self.assertContains(public, text)
+        self.assertNotContains(public, '>Batch A<')  # stored session-style name stays off public pages
         judge = self.client.get(self.url())
         self.assertContains(judge, 'Shalom Presidency School')
         self.assertContains(judge, 'Batch A · Batch 07')

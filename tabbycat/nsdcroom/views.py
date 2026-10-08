@@ -358,7 +358,7 @@ class PublicStandingsView(TournamentView):
             for track in sorted(by_track):
                 rows = logic.ranked(by_track[track], rounds)
                 for r in rows:
-                    r['batch'] = logic.batch_label(r['team'].institution) if r['team'].institution else ''
+                    r['batch'] = logic.public_batch_name(r['team'].institution)
                     r['qualified'] = r['rank'] <= release.qualify_count
                 tracks.append({'track': track, **logic.split_track(track), 'rows': rows})
         return render(request, 'nsdcroom/public_standings.html', {

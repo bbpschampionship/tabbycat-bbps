@@ -1,4 +1,4 @@
-{% extends "nsdcroom/base.html" %}
+{% extends "nsdcroom/base.html" %}{% load nsdc_tags %}
 {% block title %}Find your batch{% endblock %}
 {% block heading %}Find your batch{% endblock %}
 {% block meta %}<div class="meta">Type a student's name or school to see their batch and batch code.</div>{% endblock %}
@@ -9,7 +9,7 @@
   <div class="scroll">
   <table id="list"><thead><tr><th>Student</th><th>School</th><th>Batch</th><th>Code</th></tr></thead><tbody>
   {% for s in students %}<tr><td><strong>{{ s.name }}</strong></td><td>{{ s.school }}</td>
-    <td style="white-space:nowrap">{% if s.room %}<a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=s.room.id %}">{{ s.room.name }}</a>{% endif %}</td><td><span class="pill">{{ s.room.code }}</span></td></tr>{% endfor %}
+    <td style="white-space:nowrap">{% if s.room %}<a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=s.room.id %}">{{ s.room|batchname }}</a>{% endif %}</td><td><span class="pill">{{ s.room.code }}</span></td></tr>{% endfor %}
   </tbody></table>
   </div>
 </section>

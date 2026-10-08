@@ -1,4 +1,4 @@
-{% extends "nsdcroom/base.html" %}{% load static %}
+{% extends "nsdcroom/base.html" %}{% load static nsdc_tags %}
 {% block title %}Online Qualifiers{% endblock %}
 {% block masthead %}
 <header class="mast hero">
@@ -74,7 +74,7 @@
     {% for s in students %}
     <a class="hit" hidden href="{% if s.room %}{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=s.room.id %}{% else %}#{% endif %}" data-k="{{ s.name|lower }} {{ s.school|lower }}">
       <span class="code">{{ s.room.code }}</span>
-      <span class="who"><strong>{{ s.name }}</strong><span class="where">{{ s.school }}{% if s.room %} · Batch {{ s.room.code }} · {{ s.room.name }}{% endif %}</span></span>
+      <span class="who"><strong>{{ s.name }}</strong><span class="where">{{ s.school }}{% if s.room %} · {{ s.room|batchname }}{% endif %}<br><b style="color:var(--ink-strong)">Full day · check-in 8:00 AM IST</b></span></span>
       <span class="go">View →</span>
     </a>
     {% endfor %}

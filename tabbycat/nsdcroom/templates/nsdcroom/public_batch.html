@@ -1,8 +1,8 @@
-{% extends "nsdcroom/base.html" %}
-{% block title %}{{ label }}{% endblock %}
+{% extends "nsdcroom/base.html" %}{% load nsdc_tags %}
+{% block title %}{{ room|batchname }}{% endblock %}
 {% block eyebrow %}NSDC 2026 · Online Qualifiers · Batch {{ room.code }}{% endblock %}
-{% block heading %}{{ room.name }}{% endblock %}
-{% block meta %}<div class="meta">Batch code {{ room.code }}{% if profile %} · {{ track.name }} · {{ profile.grades_label }}{% endif %}</div>{% endblock %}
+{% block heading %}{{ room|batchname }}{% endblock %}
+{% block meta %}<div class="meta">Batch code {{ room.code }}{% if profile %} · {{ profile.grades_label }}{% endif %} · Full day on Sunday 11 Oct · check-in 8:00 AM IST</div>{% endblock %}
 {% block content %}
 
 <section class="card help">
@@ -35,7 +35,7 @@
 <div class="sec"><h2>Students</h2><span class="k">{{ students|length }} in this batch</span><span class="r"></span></div>
 <section class="card">
   <div class="scroll"><table><thead><tr><th>#</th><th>Student</th><th>School</th><th>Batch</th><th>Code</th></tr></thead><tbody>
-  {% for s in students %}<tr><td class="muted">{{ forloop.counter }}</td><td><strong>{{ s.name }}</strong></td><td>{{ s.school }}</td><td style="white-space:nowrap">{{ room.name }}</td><td><span class="pill">{{ room.code }}</span></td></tr>{% endfor %}
+  {% for s in students %}<tr><td class="muted">{{ forloop.counter }}</td><td><strong>{{ s.name }}</strong></td><td>{{ s.school }}</td><td style="white-space:nowrap">{{ room|batchname }}</td><td><span class="pill">{{ room.code }}</span></td></tr>{% endfor %}
   </tbody></table></div>
 </section>
 {% endblock %}
