@@ -418,3 +418,42 @@ class ReleaseAndImportTests(RoomTestBase):
         page = self.client.get(reverse('nsdcroom-public-batch', kwargs={'tournament_slug': self.t.slug, 'room_id': self.room.id}))
         self.assertContains(page, 'Meera')
         self.assertContains(page, '+91 91111 22222')
+
+    def test_release_via_n8n_webhook_records_results(self):
+        import json
+        from unittest import mock
+        logic.replace_draw(self.rounds[0], self.room, [[self.teams[0].id, self.teams[1].id]])
+        p = Pairing.objects.get(round=self.rounds[0])
+        calls = []
+
+        class Resp:
+            def __init__(self, body): self.body = body
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def read(self, n=-1): return self.body
+
+        def fake_urlopen(req, timeout=None):
+            payload = json.loads(req.data)
+            calls.append(payload)
+            res = [{'team_id': s['team_id'], 'channel': 'whatsapp', 'status': 'sent', 'detail': 'ok'} for s in payload['students']]
+            res += [{'team_id': s['team_id'], 'channel': 'email', 'status': 'failed', 'detail': 'quota'} for s in payload['students']]
+            return Resp(json.dumps({'results': res}).encode())
+
+        env = {'NSDC_N8N_WEBHOOK_URL': 'https://n8n.example/webhook/x', 'NSDC_N8N_SECRET': 's3cret'}
+        with mock.patch.dict('os.environ', env), mock.patch('urllib.request.urlopen', fake_urlopen):
+            resp = self.post({'action': 'release', 'pairing': p.id, f'motion_{p.id}': self.motions[0].id})
+        self.assertContains(resp, 'Messages sent: 2, failed: 2')
+        body = calls[0]
+        self.assertEqual(body['secret'], 's3cret')
+        self.assertEqual([s['side'] for s in body['students']], ['FOR', 'AGAINST'])
+        self.assertEqual(body['students'][0]['phone'], '919876543210')
+        self.assertEqual(body['students'][1]['opponent'], 'Kid 1')
+        self.assertEqual(body['poc'], 'Riya POC +91 95555 00000')
+        self.assertEqual(Notification.objects.filter(pairing=p, channel='whatsapp', status='sent').count(), 2)
+
+        def down(req, timeout=None):
+            raise OSError('connection refused')
+        with mock.patch.dict('os.environ', env), mock.patch('urllib.request.urlopen', down):
+            resp = self.post({'action': 'release', 'pairing': p.id, f'motion_{p.id}': self.motions[0].id})
+        self.assertContains(resp, 'failed: 4')
+        self.assertTrue(Pairing.objects.get(id=p.id).is_released)  # prep still starts when n8n is down

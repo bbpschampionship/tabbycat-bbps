@@ -1,8 +1,12 @@
 """Tell both speakers of a pair their side, motion and prep deadline.
 
-WhatsApp goes through an AiSensy API campaign (an approved template) and email
-through Gmail SMTP with an app password. Either channel is skipped, and logged
-as skipped, until its environment variables exist:
+Preferred route: one POST per released pair to an n8n webhook
+(NSDC_N8N_WEBHOOK_URL + shared secret NSDC_N8N_SECRET). The n8n workflow sends
+WhatsApp through AiSensy and email through its Gmail connection, then answers
+with a status per student and channel.
+
+Fallback when no webhook is configured: send directly, each channel skipped
+until its variables exist:
 
     AISENSY_API_KEY, NSDC_AISENSY_CAMPAIGN      WhatsApp
     NSDC_SMTP_USER, NSDC_SMTP_PASSWORD          email (NSDC_SMTP_FROM optional)
@@ -132,13 +136,62 @@ def smtp_connection():
                           username=user, password=password, use_tls=True, timeout=10)
 
 
+def notify_via_n8n(pairing, members, poc, public_url, webhook):
+    """One webhook call for the whole pair; n8n replies {"results": [{team_id, channel, status, detail}]}."""
+    students = []
+    for member in members:
+        others = [o for o in members if o.team_id != member.team_id]
+        speaker = member.team.speaker_set.first()
+        email = (speaker.email or '').strip() if speaker else ''
+        students.append({
+            'team_id': member.team_id,
+            'phone': whatsapp_number(speaker.phone if speaker else ''),
+            'email': email if '@' in email else '',
+            **build_message(pairing, member, others, public_url),
+        })
+    payload = {
+        'secret': os.environ.get('NSDC_N8N_SECRET', ''),
+        'tournament': pairing.round.tournament.slug, 'round': pairing.round.name,
+        'batch_code': pairing.room.code, 'batch_name': pairing.room.name, 'pair': pairing.seq,
+        'motion': pairing.motion.text if pairing.motion else '', 'prep_end': ist_time(pairing.prep_ends_at),
+        'poc': poc, 'link': public_url, 'students': students,
+    }
+    req = urllib.request.Request(webhook, data=json.dumps(payload).encode(), method='POST',
+                                 headers={'Content-Type': 'application/json'})
+    results = []
+    try:
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            body = json.loads(resp.read().decode('utf-8', 'replace') or '{}')
+        results = body.get('results', []) if isinstance(body, dict) else []
+    except Exception as e:  # noqa: BLE001
+        error = f"n8n unreachable: {e}"[:300]
+        results = [{'team_id': s['team_id'], 'channel': ch, 'status': 'failed', 'detail': error}
+                   for s in students for ch in ('whatsapp', 'email')]
+    by_student = {s['team_id']: s for s in students}
+    rows = []
+    for r in results:
+        team_id = r.get('team_id')
+        if team_id not in by_student or r.get('channel') not in ('whatsapp', 'email'):
+            continue
+        s = by_student[team_id]
+        rows.append(Notification.objects.create(
+            pairing=pairing, team_id=team_id, channel=r['channel'],
+            destination=s['phone'] if r['channel'] == 'whatsapp' else s['email'],
+            status=r.get('status') if r.get('status') in ('sent', 'failed', 'skipped') else 'failed',
+            detail=str(r.get('detail', ''))[:500]))
+    return rows
+
+
 def notify_pairing(pairing, public_url=''):
     """Message every speaker in the pair. Returns the Notification rows created."""
     members = pairing.members
     profile = getattr(pairing.room, 'nsdc_batch', None)
     poc = f"{profile.poc_name} {profile.poc_phone}".strip() if profile else ''
-    connection = smtp_connection()
     public_url = os.environ.get('NSDC_PUBLIC_URL') or public_url
+    webhook = os.environ.get('NSDC_N8N_WEBHOOK_URL')
+    if webhook:
+        return notify_via_n8n(pairing, members, poc, public_url, webhook)
+    connection = smtp_connection()
     rows = []
     for member in members:
         others = [o for o in members if o.team_id != member.team_id]
