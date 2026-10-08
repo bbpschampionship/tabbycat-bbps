@@ -4,8 +4,6 @@
 {% block heading %}{{ room.name }}{% endblock %}
 {% block meta %}<div class="meta">Batch code {{ room.code }}{% if profile %} · Track {{ profile.track }} · {{ profile.time_slot }} · {{ profile.grades_label }}{% endif %}</div>{% endblock %}
 {% block content %}
-<nav class="tabs left"><a href="{% url 'nsdcroom-public-batches' tournament_slug=tournament.slug %}">← All batches</a>
-  <a href="{% url 'nsdcroom-public-students' tournament_slug=tournament.slug %}">Find your batch</a></nav>
 
 {% if standings %}
 <div class="sec"><h2>Batch ranking</h2><span class="k">after {% for r in released_rounds %}{{ r.abbreviation }}{% if not forloop.last %}, {% endif %}{% endfor %}</span><span class="r"></span></div>

@@ -3,7 +3,6 @@
 {% block heading %}Find your batch{% endblock %}
 {% block meta %}<div class="meta">Type a student's name or school to see their batch and batch code.</div>{% endblock %}
 {% block content %}
-<nav class="tabs left"><a href="{% url 'nsdcroom-public-batches' tournament_slug=tournament.slug %}">← All batches</a></nav>
 <section class="card">
   <input type="text" id="q" placeholder="Search {{ students|length }} students…" autocomplete="off" style="width:100%;font-size:17px;padding:14px 16px">
   <p class="muted" id="count" style="margin:10px 0 4px">{{ students|length }} students</p>

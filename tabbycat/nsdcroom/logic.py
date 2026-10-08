@@ -7,7 +7,7 @@ from django.db import transaction
 from motions.models import Motion
 from participants.models import Team
 
-from .models import MAX_SCORE, Attendance, Pairing, PairingSpeaker, RoomRound, RoundRelease
+from .models import MAX_SCORE, Attendance, Pairing, PairingSpeaker, RoomRound, RoundRelease  # noqa: F401
 
 
 def team_name(team):

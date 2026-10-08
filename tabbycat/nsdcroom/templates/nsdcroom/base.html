@@ -159,6 +159,13 @@
   .rank{font-size:13px!important}.num{font-size:17px}.cp-sc{font-size:14px!important}
   input[type=number]{font-size:24px!important}h2 .step{font-size:14px!important}
   body,.pair-head strong{font-variant-numeric:lining-nums}
+  .sitenav{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin:-4px 0 20px;padding:5px;border:1px solid var(--line);
+           border-radius:999px;background:var(--white);-webkit-overflow-scrolling:touch}
+  .sitenav::-webkit-scrollbar{display:none}
+  .sitenav a{flex:1 0 auto;text-align:center;padding:9px 14px;border-radius:999px;text-decoration:none;white-space:nowrap;
+             font-weight:800;font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-dd)}
+  .sitenav a:hover{background:var(--cream)}
+  .sitenav a.on{background:var(--gm);color:var(--ink-strong)}
   [hidden]{display:none!important}
   @media (max-width:560px){ .inner{padding:18px 10px 20px} .card{padding:14px} .frame{padding:0 8px} .coin{width:54px;height:54px} }
 </style>
@@ -181,6 +188,18 @@
     </header>
     <div class="orn"><span class="l"></span><span class="d"></span><span class="l"></span></div>
     {% endblock %}
+    {% if nav %}
+    <nav class="sitenav" aria-label="NSDC qualifiers">
+      {% url 'nsdcroom-public-batches' tournament_slug=tournament.slug as u_home %}{% url 'nsdcroom-public-batch-list' tournament_slug=tournament.slug as u_batches %}{% url 'nsdcroom-public-students' tournament_slug=tournament.slug as u_people %}{% url 'nsdcroom-public-judges' tournament_slug=tournament.slug as u_judges %}{% url 'nsdcroom-public-rounds' tournament_slug=tournament.slug as u_rounds %}{% url 'nsdcroom-public-results' tournament_slug=tournament.slug as u_results %}{% url 'nsdcroom-public-standings' tournament_slug=tournament.slug as u_rank %}
+      <a href="{{ u_home }}" class="{% if nav == 'home' %}on{% endif %}">Home</a>
+      <a href="{{ u_batches }}" class="{% if nav == 'batches' %}on{% endif %}">Batches</a>
+      <a href="{{ u_people }}" class="{% if nav == 'participants' %}on{% endif %}">Participants</a>
+      <a href="{{ u_judges }}" class="{% if nav == 'judges' %}on{% endif %}">Judges</a>
+      <a href="{{ u_rounds }}" class="{% if nav == 'rounds' %}on{% endif %}">Rounds</a>
+      <a href="{{ u_results }}" class="{% if nav == 'results' %}on{% endif %}">Results</a>
+      <a href="{{ u_rank }}" class="{% if nav == 'rankings' %}on{% endif %}">Rankings</a>
+    </nav>
+    {% endif %}
     {% if messages %}<div class="msgs">{% for message in messages %}<div class="msg {{ message.tags }}">{{ message }}</div>{% endfor %}</div>{% endif %}
     {% block content %}{% endblock %}
   </div>

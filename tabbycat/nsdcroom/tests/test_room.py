@@ -235,3 +235,48 @@ class ProfileDisplayTests(RoomTestBase):
         resp = self.client.get(reverse('tournament-public-index', kwargs={'tournament_slug': self.t.slug}))
         self.assertRedirects(resp, reverse('nsdcroom-public-batches', kwargs={'tournament_slug': self.t.slug}),
                              fetch_redirect_response=False)
+
+
+class ParentHomeTests(RoomTestBase):
+
+    def test_home_has_finder_and_links_but_not_batch_list(self):
+        from nsdcroom.models import BatchProfile, StudentProfile
+        BatchProfile.objects.create(institution=self.room, track='A (Grade 3-5)', time_slot='3PM-4:30PM', grades='3 to 5')
+        StudentProfile.objects.create(team=self.teams[0], school='Shalom Presidency School')
+        home = self.client.get(reverse('nsdcroom-public-batches', kwargs={'tournament_slug': self.t.slug}))
+        self.assertContains(home, "Find your child")
+        self.assertContains(home, 'Shalom Presidency School')
+        self.assertContains(home, 'Afternoon')
+        self.assertContains(home, reverse('nsdcroom-public-batch-list', kwargs={'tournament_slug': self.t.slug}))
+        self.assertNotContains(home, 'class="card bcard"')
+        lst = self.client.get(reverse('nsdcroom-public-batch-list', kwargs={'tournament_slug': self.t.slug}))
+        self.assertContains(lst, 'class="card bcard"')
+
+    def test_subpages(self):
+        from nsdcroom.models import BatchProfile
+        BatchProfile.objects.create(institution=self.room, track='A (Grade 3-5)', time_slot='10AM-11:30AM', grades='3 to 4')
+        kw = {'tournament_slug': self.t.slug}
+        judges = self.client.get(reverse('nsdcroom-public-judges', kwargs=kw))
+        self.assertContains(judges, 'Judge A')
+        self.assertNotContains(judges, self.judge.url_key)
+        self.judge.name = ''
+        self.judge.save()
+        self.assertContains(self.client.get(reverse('nsdcroom-public-judges', kwargs=kw)), 'To be announced')
+        # rounds shows announced draws; results stays empty until released
+        logic.replace_draw(self.rounds[0], self.room, [[self.teams[0].id, self.teams[1].id]])
+        p = Pairing.objects.get(round=self.rounds[0])
+        p.motion = self.motions[0]
+        p.save()
+        logic.save_scores(p, {self.teams[0].id: '71', self.teams[1].id: '69'})
+        rr = logic.room_round(self.rounds[0], self.room)
+        rr.draw_announced = True
+        rr.save()
+        self.assertContains(self.client.get(reverse('nsdcroom-public-rounds', kwargs=kw) + '?round=1'), 'This House would 1')
+        results = self.client.get(reverse('nsdcroom-public-results', kwargs=kw) + '?round=1')
+        self.assertContains(results, 'will be published')
+        self.assertNotContains(results, '>71<')
+        RoundRelease.objects.create(round=self.rounds[0], results_released=True)
+        self.assertContains(self.client.get(reverse('nsdcroom-public-results', kwargs=kw) + '?round=1'), '71')
+        home = self.client.get(reverse('nsdcroom-public-batches', kwargs=kw))
+        for name in ('Batches', 'Participants', 'Judges', 'Rounds', 'Results', 'Rankings'):
+            self.assertContains(home, name)

@@ -1,0 +1,114 @@
+{% extends "nsdcroom/base.html" %}{% load static %}
+{% block title %}Online Qualifiers{% endblock %}
+{% block masthead %}
+<header class="mast hero">
+  <div class="coins">
+    <span class="coin"><img src="{% static 'nsdc/logo_taivas.png' %}" alt="Taivas Debate Club"></span>
+    <span class="coin"><img src="{% static 'nsdc/logo_iitb.png' %}" alt="IIT Bombay Debate Society"></span>
+  </div>
+  <div class="org">Taivas Debate Club<span class="x">×</span><span class="iitb">IIT Bombay Debate Society</span></div>
+  <div class="wordmark">NATIONAL<br>SPEECH &amp; DEBATE</div>
+  <div class="champ"><span class="r"></span>CHAMPIONSHIP<span class="r"></span></div>
+  <div class="zone"><span class="pill">Online Qualifiers</span><span class="t">Sunday · 11 October 2026</span></div>
+</header>
+<div class="orn"><span class="l"></span><span class="d"></span><span class="l"></span></div>
+{% endblock %}
+{% block content %}
+<style>
+  .finder{border-top-width:4px;padding:22px}
+  .finder h2{font-size:22px;justify-content:center;text-align:center;margin-bottom:4px}
+  .finder .lead{text-align:center;font-family:var(--serif);font-style:italic;font-size:17px;margin:0 0 14px}
+  .finder input{width:100%;font-size:18px;padding:15px 18px;border-width:2px;border-color:var(--gold)}
+  .res{display:none;margin-top:12px}
+  .res.on{display:block}
+  .hit{display:flex;gap:14px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line-soft);text-decoration:none;color:inherit}
+  .hit:hover{background:var(--cream)}
+  .hit .who{flex:1;min-width:0}
+  .hit .who strong{display:block;font-size:16px;color:var(--ink-strong)}
+  .hit .where{font-size:13px;color:var(--gold-d)}
+  .hit .go{font-weight:800;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-dd);white-space:nowrap}
+  .none{display:none;text-align:center;font-family:var(--serif);font-style:italic;font-size:16px;padding:12px}
+  .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
+  .slot{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:linear-gradient(180deg,#FFFFFF,#FFFDF5);text-align:center}
+  .slot .k{font-size:10.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-d)}
+  .slot .v{font-weight:900;font-size:22px;color:var(--ink-strong);margin:4px 0 2px}
+  .slot .s{font-family:var(--serif);font-style:italic;font-size:15px}
+  .steps{counter-reset:s;display:grid;gap:12px}
+  .stp{display:flex;gap:14px;align-items:flex-start}
+  .stp::before{counter-increment:s;content:counter(s);flex:none;width:32px;height:32px;border-radius:50%;background:var(--gm);border:1px solid var(--gold-d);
+       display:grid;place-items:center;font-weight:900;font-size:14px;color:var(--ink-strong)}
+  .stp strong{display:block;color:var(--ink-strong);font-size:15.5px}
+  .stp span{font-size:14px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px}
+  .tile{display:block;text-decoration:none;border:1.5px solid var(--gold);border-top-width:4px;border-radius:14px;padding:16px 18px;
+        background:var(--white);color:inherit;position:relative}
+  .tile:hover{background:var(--cream)}
+  .tile .t{display:block;font-weight:900;font-size:18px;color:var(--ink-strong)}
+  .tile .t::after{content:" →";color:var(--gold)}
+  .tile .d{display:block;font-size:13.5px;color:var(--ink);margin-top:2px}
+  .live{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 0 16px;font-weight:800;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ok)}
+  .live i{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 4px rgba(47,107,58,.15)}
+</style>
+
+{% if draw_live %}<a class="live" href="{% url 'nsdcroom-public-rounds' tournament_slug=tournament.slug %}?round={{ round.seq }}" style="text-decoration:none"><i></i>{{ round.name }} draw is live — see the pairs</a>{% endif %}
+
+<section class="card finder">
+  <h2>Find your child's batch</h2>
+  <p class="lead">Type your child's name or school</p>
+  <input type="text" id="q" placeholder="e.g. Aarav, or Shalom Presidency" autocomplete="off" autocapitalize="words" enterkeyhint="search">
+  <div class="res" id="res">
+    {% for s in students %}
+    <a class="hit" hidden href="{% if s.room %}{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=s.room.id %}{% else %}#{% endif %}" data-k="{{ s.name|lower }} {{ s.school|lower }}">
+      <span class="code">{{ s.room.code }}</span>
+      <span class="who"><strong>{{ s.name }}</strong><span class="where">{{ s.school }}{% if s.room %} · Batch {{ s.room.code }} · {{ s.room.name }}{% endif %}{% if s.profile %} · {{ s.profile.time_slot }}{% endif %}</span></span>
+      <span class="go">View →</span>
+    </a>
+    {% endfor %}
+    <div class="none" id="none">No student found. Try part of the first name, or the school.</div>
+  </div>
+</section>
+
+<div class="sec"><h2>Explore</h2><span class="r"></span></div>
+<div class="tiles">
+  <a class="tile" href="{% url 'nsdcroom-public-batch-list' tournament_slug=tournament.slug %}"><span class="t">Batches</span><span class="d">{{ room_count }} batches · codes, times, grades</span></a>
+  <a class="tile" href="{% url 'nsdcroom-public-students' tournament_slug=tournament.slug %}"><span class="t">Participants</span><span class="d">{{ students|length }} students with school and batch</span></a>
+  <a class="tile" href="{% url 'nsdcroom-public-judges' tournament_slug=tournament.slug %}"><span class="t">Judges</span><span class="d">Who judges each batch</span></a>
+  <a class="tile" href="{% url 'nsdcroom-public-rounds' tournament_slug=tournament.slug %}"><span class="t">Rounds</span><span class="d">Pairs and motions, live on the day</span></a>
+  <a class="tile" href="{% url 'nsdcroom-public-results' tournament_slug=tournament.slug %}"><span class="t">Results</span><span class="d">Scores and winners after each round</span></a>
+  <a class="tile" href="{% url 'nsdcroom-public-standings' tournament_slug=tournament.slug %}"><span class="t">Rankings</span><span class="d">{% if standings_released %}Top {{ release.qualify_count }} per track qualify{% else %}Published after the final round{% endif %}</span></a>
+</div>
+
+<div class="sec"><h2>On the day</h2><span class="k">Sunday, 11 October</span><span class="r"></span></div>
+<div class="grid3">
+  {% for sl in slots %}
+  <div class="slot"><div class="k">{{ sl.name }}</div><div class="v">{{ sl.label }}</div><div class="s">{{ sl.rooms|length }} batches</div></div>
+  {% endfor %}
+</div>
+<p class="muted" style="text-align:center;margin:10px 0 0">Search your child's name above to see their batch code and time slot.</p>
+
+<div class="sec"><h2>How the qualifier works</h2><span class="r"></span></div>
+<section class="card">
+  <div class="steps">
+    <div class="stp"><div><strong>Attendance</strong><span>Your batch's judge marks everyone present at the start of each round.</span></div></div>
+    <div class="stp"><div><strong>Three rounds of 1v1 debate</strong><span>The judge announces the pairs and each pair's motion. Round 1 is random; Rounds 2 and 3 pair speakers on similar scores.</span></div></div>
+    <div class="stp"><div><strong>Scored out of 100</strong><span>Feedback is given verbally. Each speaker gets one score out of 100, and the winner of every debate always scores higher.</span></div></div>
+    <div class="stp"><div><strong>Top {{ release.qualify_count|default:16 }} in each track qualify</strong><span>Rankings by total score across the three rounds decide who reaches the Grand Finale at IIT Bombay on 25 October.</span></div></div>
+  </div>
+</section>
+
+<script>
+(function () {
+  var q = document.getElementById('q'), res = document.getElementById('res'), none = document.getElementById('none');
+  var hits = [].slice.call(res.querySelectorAll('.hit'));
+  q.addEventListener('input', function () {
+    var v = q.value.trim().toLowerCase(), n = 0;
+    res.classList.toggle('on', v.length >= 2);
+    hits.forEach(function (h) {
+      var show = v.length >= 2 && n < 25 && h.getAttribute('data-k').indexOf(v) !== -1;
+      h.hidden = !show; if (show) n++;
+    });
+    none.style.display = (v.length >= 2 && n === 0) ? 'block' : 'none';
+  });
+})();
+</script>
+{% endblock %}

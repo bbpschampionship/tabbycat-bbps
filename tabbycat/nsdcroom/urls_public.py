@@ -3,8 +3,12 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.PublicBatchesView.as_view(), name='nsdcroom-public-batches'),
+    path('', views.PublicHomeView.as_view(), name='nsdcroom-public-batches'),
+    path('all/', views.PublicBatchesView.as_view(mode='batches'), name='nsdcroom-public-batch-list'),
+    path('rounds/', views.PublicBatchesView.as_view(mode='rounds'), name='nsdcroom-public-rounds'),
+    path('results/', views.PublicBatchesView.as_view(mode='results'), name='nsdcroom-public-results'),
     path('students/', views.PublicStudentsView.as_view(), name='nsdcroom-public-students'),
+    path('judges/', views.PublicJudgesView.as_view(), name='nsdcroom-public-judges'),
     path('standings/', views.PublicStandingsView.as_view(), name='nsdcroom-public-standings'),
     path('<int:room_id>/', views.PublicBatchView.as_view(), name='nsdcroom-public-batch'),
 ]

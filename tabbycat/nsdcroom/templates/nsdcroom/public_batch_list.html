@@ -1,0 +1,36 @@
+{% extends "nsdcroom/base.html" %}
+{% block title %}{% if mode == 'rounds' %}Rounds{% elif mode == 'results' %}Results{% else %}Batches{% endif %}{% endblock %}
+{% block heading %}{% if mode == 'rounds' %}Rounds{% elif mode == 'results' %}Results{% else %}Batches{% endif %}{% endblock %}
+{% block meta %}<div class="meta">{% if mode == 'rounds' %}Pairs and motions for each batch, as soon as the judge announces them.{% elif mode == 'results' %}Scores and winners, published once the round is complete.{% else %}{{ rooms|length }} batches · {{ student_count }} speakers · tap a batch to see its students.{% endif %}</div>{% endblock %}
+{% block content %}
+{% if mode != 'batches' %}
+<nav class="tabs left">
+  {% for r in rounds %}<a href="?round={{ r.seq }}" class="{% if r == round %}on{% endif %}">{{ r.name }}</a>{% endfor %}
+</nav>
+{% endif %}
+
+{% if mode == 'results' and not rooms %}
+  <section class="card" style="text-align:center"><div style="font-family:var(--serif);font-style:italic;font-size:20px">{{ round.name }} results will be published once the round is complete.</div></section>
+{% endif %}
+
+{% for tr in tracks %}
+  <div class="sec"><h2>{% if tr.letter %}Track {{ tr.letter }}{% else %}Batches{% endif %}</h2><span class="k">{{ tr.grades }}</span><span class="r"></span></div>
+  <div class="bgrid">
+  {% for row in tr.rooms %}
+  <section class="card bcard">
+    <div class="row" style="align-items:flex-start;{% if mode != 'batches' %}margin-bottom:10px{% endif %}">
+      <span class="code">{{ row.room.code }}</span>
+      <div class="grow">
+        <a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=row.room.id %}" style="text-decoration:none">
+          <strong style="font-size:18px;color:var(--ink-strong)">{{ row.room.name }}</strong></a>
+        <div class="muted">Batch {{ row.room.code }}{% if row.profile %} · {{ row.profile.time_slot }} · {{ row.profile.grades_label }}{% endif %} · {{ row.count }} speakers</div>
+      </div>
+      {% if mode == 'rounds' and row.block.announced %}<span class="pill gold">Draw live</span>{% endif %}
+    </div>
+    {% if mode != 'batches' %}{% with block=row.block %}{% include "nsdcroom/_pairings_compact.html" %}{% endwith %}{% endif %}
+    <p class="more"><a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=row.room.id %}" style="font-weight:800;font-size:12px;letter-spacing:.12em;text-transform:uppercase">{% if mode == 'batches' %}Students in this batch{% else %}Full batch page{% endif %} →</a></p>
+  </section>
+  {% endfor %}
+  </div>
+{% endfor %}
+{% endblock %}

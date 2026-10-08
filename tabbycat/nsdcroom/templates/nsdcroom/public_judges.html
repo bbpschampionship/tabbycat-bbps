@@ -1,0 +1,14 @@
+{% extends "nsdcroom/base.html" %}
+{% block title %}Judges{% endblock %}
+{% block heading %}Judges{% endblock %}
+{% block meta %}<div class="meta">One judge runs each batch: attendance, the draw, motions and scores.</div>{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="scroll"><table><thead><tr><th>Code</th><th>Batch</th><th>Time</th><th>Judge</th></tr></thead><tbody>
+  {% for r in rows %}<tr><td><span class="pill">{{ r.room.code }}</span></td>
+    <td><a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=r.room.id %}"><strong>{{ r.room.name }}</strong></a></td>
+    <td class="muted" style="white-space:nowrap">{{ r.profile.time_slot }}</td>
+    <td>{% if r.judges %}<strong>{{ r.judges|join:", " }}</strong>{% else %}<span style="font-family:var(--serif);font-style:italic;font-size:16px">To be announced</span>{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}
