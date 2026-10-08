@@ -8,7 +8,9 @@ from participants.models import Adjudicator, Institution, Speaker, Team
 from tournaments.models import Round, Tournament
 
 from nsdcroom import logic
-from nsdcroom.models import Attendance, Pairing, PairingSpeaker, RoundRelease, TournamentRelease
+from django.utils import timezone
+
+from nsdcroom.models import Attendance, Notification, Pairing, PairingSpeaker, RoundRelease, TournamentRelease
 
 
 class RoomTestBase(TestCase):
@@ -51,20 +53,26 @@ class LogicTests(RoomTestBase):
             with self.assertRaises(ValidationError):
                 logic.validate_scores(bad)
 
-    def test_odd_room_makes_one_trio_and_no_rematches(self):
-        ids = [t.id for t in self.teams]
+    def test_odd_room_gives_one_swing_and_no_rematches(self):
+        ids = [t.id for t in self.teams]  # 7 speakers
         groups = logic.build_groups(self.rounds[0], self.room, ids)
-        self.assertEqual(sorted(len(g) for g in groups), [2, 2, 3])
+        self.assertEqual(sorted(len(g) for g in groups), [1, 2, 2, 2])
         self.assertEqual(sorted(i for g in groups for i in g), sorted(ids))
         logic.replace_draw(self.rounds[0], self.room, groups)
+        swing = Pairing.objects.get(round=self.rounds[0], pairingspeaker__isnull=False, seq=4)
+        self.assertTrue(swing.is_swing)
+        self.assertEqual(swing.members[0].side_label, 'For')
         for p in Pairing.objects.filter(round=self.rounds[0]):
-            members = p.members
-            logic.save_scores(p, {m.team_id: str(50 + 10 * k) for k, m in enumerate(members)})
+            logic.save_scores(p, {m.team_id: str(50 + 10 * k) for k, m in enumerate(p.members)})
+        self.assertEqual(Pairing.objects.get(id=swing.id).winner.team_id, swing.members[0].team_id)  # automatic win
+        self.assertEqual(logic.tally(self.rounds[:1])[swing.members[0].team_id]['wins'], 1)
         r1_opponents = {frozenset(g) for g in groups if len(g) == 2}
         groups2 = logic.build_groups(self.rounds[1], self.room, ids)
         for g in groups2:
             if len(g) == 2:
                 self.assertNotIn(frozenset(g), r1_opponents)
+            else:  # nobody gets the swing twice
+                self.assertNotEqual(g[0], swing.members[0].team_id)
 
     def test_single_speaker(self):
         self.assertEqual(logic.build_groups(self.rounds[0], self.room, [self.teams[0].id]), [[self.teams[0].id]])
@@ -87,16 +95,23 @@ class JudgeFlowTests(RoomTestBase):
         pairings = list(Pairing.objects.filter(round=self.rounds[0], room=self.room))
         self.assertEqual(len(pairings), 3)
 
-        # announcing needs a motion on every pair
-        resp = self.post({'action': 'announce'})
-        self.assertContains(resp, 'Pick a motion for every pair')
-        # picking motions and announcing in one go saves the motions too
-        resp = self.post({'action': 'announce', **{f'motion_{p.id}': self.motions[i].id for i, p in enumerate(pairings)}})
-        self.assertContains(resp, 'Draw announced')
-
-        public = self.client.get(reverse('nsdcroom-public-batch', kwargs={'tournament_slug': self.t.slug, 'room_id': self.room.id}))
-        self.assertContains(public, 'This House would 1')
+        # the draw is public straight away; motions only once released
+        public_url = reverse('nsdcroom-public-batch', kwargs={'tournament_slug': self.t.slug, 'room_id': self.room.id})
+        public = self.client.get(public_url)
         self.assertContains(public, 'Pair 3')
+        self.assertContains(public, 'Motion soon')
+        resp = self.post({'action': 'release', 'pairing': pairings[0].id})
+        self.assertContains(resp, 'Pick a motion for Pair 1 first')
+        resp = self.post({'action': 'release', 'pairing': pairings[0].id, f'motion_{pairings[0].id}': self.motions[0].id})
+        self.assertContains(resp, 'Pair 1: motion released, prep ends at')
+        p1 = Pairing.objects.get(id=pairings[0].id)
+        self.assertEqual(round((p1.prep_ends_at - p1.motion_released_at).total_seconds()), 20 * 60)
+        # no messaging configured in tests: both channels logged as skipped for both speakers
+        self.assertEqual(Notification.objects.filter(pairing=p1, status='skipped').count(), 4)
+        public = self.client.get(public_url)
+        self.assertContains(public, 'This House would 1')
+        self.assertNotContains(public, 'This House would 2')
+        self.assertContains(public, 'Prep ends')
 
         # a draw (tie) is rejected
         p = pairings[0]
@@ -130,34 +145,37 @@ class JudgeFlowTests(RoomTestBase):
         a, b = p1.members
         self.post({'action': 'score', 'pairing': p1.id, f'score_{a.team_id}': '80', f'score_{b.team_id}': '75'})
 
-        # kid 5 arrives late: join pair 2 as third speaker; pair 1 untouched keeps score
+        # kid 5 arrives late: debates the swing as pair 3; pairs 1-2 untouched keep scores and motions
         late = self.teams[4]
         self.mark_present(self.teams[:5])
-        resp = self.client.get(self.url())
-        self.assertContains(resp, 'Present but not in the draw')
+        self.assertContains(self.client.get(self.url()), 'Present but not in the draw')
         data = {'action': 'edit_draw'}
         for p in (p1, p2):
             for m in p.members:
                 data[f'pair_{m.team_id}'] = p.seq
                 data[f'side_{m.team_id}'] = m.side
-        data[f'pair_{late.id}'] = 2
-        data[f'side_{late.id}'] = 3
+        data[f'pair_{late.id}'] = 3
+        data[f'side_{late.id}'] = 2
+        resp = self.post(data)
+        self.assertContains(resp, 'must be For')
+        data[f'side_{late.id}'] = 1
         resp = self.post(data)
         self.assertContains(resp, 'Draw updated')
         pairings = list(Pairing.objects.filter(round=self.rounds[0], room=self.room))
-        self.assertEqual([len(p.members) for p in pairings], [2, 3])
+        self.assertEqual([len(p.members) for p in pairings], [2, 2, 1])
         self.assertTrue(pairings[0].is_scored)
-        self.assertEqual(pairings[1].motion_id, self.motions[1].id)  # motion kept for pair 2
+        self.assertEqual(pairings[1].motion_id, self.motions[1].id)
 
-        # duplicate side in one pair is rejected
-        data[f'side_{late.id}'] = 1
-        resp = self.post(data)
-        self.assertContains(resp, 'same side')
+        # two speakers on the same side are rejected
+        a2, b2 = pairings[1].members
+        data[f'side_{b2.team_id}'] = a2.side
+        self.assertContains(self.post(data), 'same side')
 
-        # three-way result
-        p = pairings[1]
-        resp = self.post({'action': 'score', 'pairing': p.id, **{f'score_{m.team_id}': str(60 + i) for i, m in enumerate(p.members)}})
-        self.assertContains(resp, 'Pair 2 result saved')
+        # swing result: one score, automatic win
+        swing = pairings[2]
+        resp = self.post({'action': 'score', 'pairing': swing.id, f'score_{late.id}': '64'})
+        self.assertContains(resp, 'Pair 3 result saved')
+        self.assertEqual(Pairing.objects.get(id=swing.id).winner.team_id, late.id)
 
     def test_regenerate_needs_confirm_once_scored(self):
         self.mark_present(self.teams[:2])
@@ -273,6 +291,8 @@ class ParentHomeTests(RoomTestBase):
         rr = logic.room_round(self.rounds[0], self.room)
         rr.draw_announced = True
         rr.save()
+        p.motion_released_at = p.prep_ends_at = timezone.now()
+        p.save()
         self.assertContains(self.client.get(reverse('nsdcroom-public-rounds', kwargs=kw) + '?round=1'), 'This House would 1')
         results = self.client.get(reverse('nsdcroom-public-results', kwargs=kw) + '?round=1')
         self.assertContains(results, 'will be published')
@@ -286,14 +306,15 @@ class ParentHomeTests(RoomTestBase):
 
 class JudgeAllocationTests(RoomTestBase):
 
-    def test_phone_private_and_backup_assignment(self):
+    def test_judge_phone_public_backups_private(self):
         self.judge.phone = '+91 90000 11111'
         self.judge.save()
         backup = Adjudicator.objects.create(tournament=self.t, name='Backup B', phone='+91 90000 22222', url_key='backupkeybbbb')
         kw = {'tournament_slug': self.t.slug}
         public = self.client.get(reverse('nsdcroom-public-judges', kwargs=kw))
         self.assertContains(public, 'Judge A')
-        self.assertNotContains(public, '90000')
+        self.assertContains(public, '+91 90000 11111')  # parents call the judge for help
+        self.assertNotContains(public, '22222')
         self.assertNotContains(public, 'Backup B')
         admin = get_user_model().objects.create_superuser('boss', 'b@example.com', 'pw')
         self.client.force_login(admin)
@@ -308,3 +329,92 @@ class JudgeAllocationTests(RoomTestBase):
         self.client.logout()
         judge_page = self.client.get(reverse('nsdcroom-judge', kwargs={**kw, 'url_key': 'backupkeybbbb'}))
         self.assertContains(judge_page, 'Kid 1')
+
+
+class ReleaseAndImportTests(RoomTestBase):
+
+    def setUp(self):
+        super().setUp()
+        from nsdcroom.models import BatchProfile
+        BatchProfile.objects.create(institution=self.room, track='A (Grade 3-5)', poc_name='Riya POC', poc_phone='+91 95555 00000')
+        for i, t in enumerate(self.teams):
+            sp = t.speaker_set.first()
+            sp.email, sp.phone = f'kid{i}@example.com', f'98765 4321{i}'
+            sp.save()
+
+    def test_judge_dropdown_only_offers_own_track(self):
+        from nsdcroom.models import MotionTrack
+        MotionTrack.objects.create(motion=self.motions[0], track='A')
+        MotionTrack.objects.create(motion=self.motions[1], track='B')
+        offered = {m.id for m in logic.round_motions(self.rounds[0], self.room)}
+        self.assertIn(self.motions[0].id, offered)
+        self.assertNotIn(self.motions[1].id, offered)
+
+    def test_release_sends_whatsapp_and_email_with_side_motion_and_prep_end(self):
+        import json
+        from unittest import mock
+        from django.core import mail
+        from django.core.mail import get_connection
+        from nsdcroom import notify
+        logic.replace_draw(self.rounds[0], self.room, [[self.teams[0].id, self.teams[1].id]])
+        p = Pairing.objects.get(round=self.rounds[0])
+        sent = []
+
+        class Resp:
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def read(self, n=-1): return b'{"success":"true"}'
+
+        def fake_urlopen(req, timeout=None):
+            sent.append(json.loads(req.data))
+            return Resp()
+
+        env = {'AISENSY_API_KEY': 'k', 'NSDC_AISENSY_CAMPAIGN': 'nsdc_motion', 'NSDC_SMTP_USER': 'u@x.com', 'NSDC_SMTP_PASSWORD': 'p'}
+        with mock.patch.dict('os.environ', env), mock.patch('urllib.request.urlopen', fake_urlopen), \
+                mock.patch.object(notify, 'smtp_connection', lambda: get_connection('django.core.mail.backends.locmem.EmailBackend')):
+            resp = self.post({'action': 'release', 'pairing': p.id, f'motion_{p.id}': self.motions[2].id})
+        self.assertContains(resp, 'Messages sent: 4')
+        self.assertEqual([s['destination'] for s in sent], ['919876543210', '919876543211'])
+        params = sent[0]['templateParams']
+        self.assertEqual(params[0], 'Kid 1')
+        self.assertIn('FOR', params[3])
+        self.assertEqual(params[5], 'This House would 3')
+        self.assertTrue(params[6].endswith(('AM', 'PM')))
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertIn('This House would 3', mail.outbox[0].body)
+        self.assertIn('Riya POC', mail.outbox[0].body)
+        self.assertIn('Judge A', mail.outbox[0].body)
+
+    def test_motion_and_poc_import(self):
+        import os, tempfile
+        import openpyxl
+        from django.core.management import call_command
+        from nsdcroom.models import BatchProfile, MotionTrack
+        self.room.code = '01'
+        self.room.save()
+        d = tempfile.mkdtemp()
+        wb = openpyxl.Workbook(); ws = wb.active
+        ws.append(['Round', 'Track', 'Motion'])
+        for rnd in (1, 2):
+            for trk in ('Primary', 'Junior'):
+                for k in range(3):
+                    ws.append([f'Round {rnd}', trk, f'THW motion {trk} R{rnd} #{k}'])
+        mpath = os.path.join(d, 'm.xlsx'); wb.save(mpath)
+        call_command('nsdc_import_motions', mpath, tournament=self.t.slug, stdout=open(os.devnull, 'w'))
+        call_command('nsdc_import_motions', mpath, tournament=self.t.slug, stdout=open(os.devnull, 'w'))  # idempotent
+        self.assertEqual(MotionTrack.objects.filter(track='A').count(), 6)
+        self.assertEqual(MotionTrack.objects.filter(track='B').count(), 6)
+        offered = [m.text for m in logic.round_motions(self.rounds[1], self.room)]
+        self.assertIn('THW motion Primary R2 #0', offered)
+        self.assertNotIn('THW motion Junior R2 #0', offered)
+        self.assertNotIn('THW motion Primary R1 #0', offered)
+        wb = openpyxl.Workbook(); ws = wb.active
+        ws.append(['Batch Code', 'Batch', 'POC', 'POC Contact'])
+        ws.append(['01', 'Batch A', 'Meera', '+91 91111 22222'])
+        ppath = os.path.join(d, 'p.xlsx'); wb.save(ppath)
+        call_command('nsdc_import_pocs', ppath, tournament=self.t.slug, stdout=open(os.devnull, 'w'))
+        bp = BatchProfile.objects.get(institution=self.room)
+        self.assertEqual((bp.poc_name, bp.poc_phone), ('Meera', '+91 91111 22222'))
+        page = self.client.get(reverse('nsdcroom-public-batch', kwargs={'tournament_slug': self.t.slug, 'room_id': self.room.id}))
+        self.assertContains(page, 'Meera')
+        self.assertContains(page, '+91 91111 22222')

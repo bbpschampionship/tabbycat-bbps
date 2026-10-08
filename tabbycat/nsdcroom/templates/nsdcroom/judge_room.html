@@ -34,7 +34,8 @@
 <section class="card" id="draw">
   <h2><span class="step">2</span> Draw</h2>
   <p class="muted">{% if round.seq == 1 %}Round 1 pairs present speakers at random.{% else %}Pairs speakers with similar scores so far, avoiding repeat opponents.{% endif %}
-    An odd number gives one group of three.</p>
+    With an odd number, one speaker debates the <strong>Swing</strong>: they take For and win automatically, but still give their speech for a score.
+    The draw (pairs and sides) shows on the public page as soon as it is generated.</p>
   <form method="post" class="row">{% csrf_token %}
     <input type="hidden" name="action" value="generate"><input type="hidden" name="round" value="{{ round.seq }}">
     {% if any_scores %}<label class="row muted"><input type="checkbox" name="confirm" value="yes"> Throw away entered scores and re-draw</label>{% endif %}
@@ -49,7 +50,7 @@
     <summary style="cursor:pointer;font-weight:700">Change the draw by hand (late arrivals, someone leaves, odd numbers)</summary>
     <form method="post" style="margin-top:10px">{% csrf_token %}
       <input type="hidden" name="action" value="edit_draw"><input type="hidden" name="round" value="{{ round.seq }}">
-      <table>
+      <div class="scroll"><table>
         <thead><tr><th>Speaker</th><th>Pair</th><th>Side</th></tr></thead>
         <tbody>
         {% for s in speakers %}{% if s.present or s.pair %}
@@ -57,54 +58,53 @@
             <td><select name="pair_{{ s.team.id }}"><option value="">— not debating</option>
               {% for n in pair_choices %}<option value="{{ n }}" {% if s.pair == n %}selected{% endif %}>Pair {{ n }}</option>{% endfor %}</select></td>
             <td><select name="side_{{ s.team.id }}">
-              <option value="1" {% if s.side == 1 %}selected{% endif %}>Proposition</option>
-              <option value="2" {% if s.side == 2 %}selected{% endif %}>Opposition</option>
-              <option value="3" {% if s.side == 3 %}selected{% endif %}>Third speaker</option></select></td></tr>
+              <option value="1" {% if s.side == 1 %}selected{% endif %}>For</option>
+              <option value="2" {% if s.side == 2 %}selected{% endif %}>Against</option></select></td></tr>
         {% endif %}{% endfor %}
         </tbody>
-      </table>
-      <p class="muted">A pair can have 2 speakers, or 3 when numbers are odd. Pairs whose line-up changes lose any scores already entered.</p>
+      </table></div>
+      <p class="muted">Each pair has one For and one Against. A speaker alone in a pair debates the Swing and must be For. Pairs whose line-up changes lose their scores and need their motion released again.</p>
       <button type="submit" class="dark" {% if locked %}disabled{% endif %}>Save draw changes</button>
     </form>
   </details>
   {% endif %}
 </section>
 
-{# ---------- 3. Motions + announce ---------- #}
+{# ---------- 3. Motions, one pair at a time ---------- #}
 {% if pairings %}
 <section class="card" id="motions">
-  <h2><span class="step">3</span> Motions &amp; announce
-    {% if room_round.draw_announced %}<span class="pill ok">announced</span>{% else %}<span class="pill">not announced</span>{% endif %}</h2>
-  <p class="muted">Pick a motion for each pair, save, then announce. Announcing puts the draw on the public batch page.</p>
-  <form method="post">{% csrf_token %}
-    <input type="hidden" name="round" value="{{ round.seq }}">
-    {% for p in pairings %}
-      <div class="pair">
-        <div class="pair-head"><strong>Pair {{ p.seq }}</strong>
-          <span class="muted">{% for m in p.members %}{{ m.name }}{% if not forloop.last %} vs {% endif %}{% endfor %}</span></div>
-        <select name="motion_{{ p.id }}" style="width:100%" {% if locked %}disabled{% endif %}>
-          <option value="">— choose motion —</option>
-          {% for mo in motions %}<option value="{{ mo.id }}" {% if p.motion_id == mo.id %}selected{% endif %}>{{ mo.reference|default:"" }}{% if mo.reference %}: {% endif %}{{ mo.text|truncatechars:110 }}</option>{% endfor %}
-        </select>
+  <h2><span class="step">3</span> Motions — release pair by pair</h2>
+  <p class="muted">Pick Pair 1's motion and press <strong>Release</strong>: their {{ prep_minutes }}-minute prep starts and both speakers get a WhatsApp and an email with their side, motion and prep end time. Release Pair 2 when Pair 1's prep is half-way, and so on.</p>
+  {% if not motions %}<div class="msg error">No motions have been added for this round and track yet — ask the tab team.</div>{% endif %}
+  {% for p in pairings %}
+    <form method="post" class="pair">{% csrf_token %}
+      <input type="hidden" name="round" value="{{ round.seq }}"><input type="hidden" name="pairing" value="{{ p.id }}">
+      <div class="pair-head"><strong>Pair {{ p.seq }}</strong>
+        {% if p.is_released %}<span class="pill ok">Prep ends {{ p.prep_end_ist }}</span>{% else %}<span class="pill">Not released</span>{% endif %}</div>
+      <div class="muted" style="margin:-4px 0 8px">{% for m in p.members %}{{ m.name }} ({{ m.side_label }}){% if not forloop.last %} vs {% endif %}{% endfor %}{% if p.is_swing %} vs Swing{% endif %}</div>
+      <select name="motion_{{ p.id }}" style="width:100%" {% if locked %}disabled{% endif %}>
+        <option value="">— choose motion —</option>
+        {% for mo in motions %}<option value="{{ mo.id }}" {% if p.motion_id == mo.id %}selected{% endif %}>{{ mo.reference|default:"" }}{% if mo.reference %}: {% endif %}{{ mo.text|truncatechars:120 }}</option>{% endfor %}
+      </select>
+      <div class="row" style="margin-top:10px">
+        <button type="submit" name="action" value="release" {% if locked %}disabled{% endif %}>{% if p.is_released %}Change / resend{% else %}Release &amp; start prep{% endif %}</button>
+        {% if p.is_released %}<span class="muted">Released {{ p.released_ist }}</span>{% endif %}
       </div>
-    {% endfor %}
-    {% if not motions %}<div class="msg error">No motions have been added for this round yet — ask the tab team.</div>{% endif %}
-    <div class="row">
-      <button type="submit" name="action" value="motions" class="ghost" {% if locked %}disabled{% endif %}>Save motions</button>
-      {% if room_round.draw_announced %}
-        <button type="submit" name="action" value="announce" {% if locked %}disabled{% endif %}>Save &amp; keep announced</button>
-        <button type="submit" name="action" value="unannounce" class="ghost" {% if locked %}disabled{% endif %}>Hide draw from public</button>
-      {% else %}
-        <button type="submit" name="action" value="announce" class="dark" {% if locked %}disabled{% endif %}>Save &amp; announce draw</button>
+      {% if p.is_released %}
+      <div style="margin-top:8px">
+        {% for m in p.members %}<div class="muted" style="font-size:12.5px">{{ m.name }}:
+          WhatsApp {% if m.wa %}<span class="pill {% if m.wa.status == 'sent' %}ok{% elif m.wa.status == 'failed' %}bad{% endif %}" title="{{ m.wa.detail }}">{{ m.wa.status }}</span>{% else %}—{% endif %}
+          · Email {% if m.em %}<span class="pill {% if m.em.status == 'sent' %}ok{% elif m.em.status == 'failed' %}bad{% endif %}" title="{{ m.em.detail }}">{{ m.em.status }}</span>{% else %}—{% endif %}</div>{% endfor %}
+      </div>
       {% endif %}
-    </div>
-  </form>
+    </form>
+  {% endfor %}
 </section>
 
 {# ---------- 4. Results ---------- #}
 <section class="card" id="results">
   <h2><span class="step">4</span> Results <span class="pill {% if scored_count == pairings|length %}ok{% endif %}">{{ scored_count }} / {{ pairings|length }} pairs scored</span></h2>
-  <p class="muted">Give feedback verbally. Enter one whole-number score out of {{ max_score }} per speaker. No draws — the winner must score higher.</p>
+  <p class="muted">After each debate, give feedback verbally and enter one whole-number score out of {{ max_score }} per speaker. No draws — the winner must score higher. A speaker against the Swing wins automatically; just score their speech.</p>
   {% for p in pairings %}
     <form method="post" class="pair" id="pair-{{ p.seq }}">{% csrf_token %}
       <input type="hidden" name="action" value="score"><input type="hidden" name="round" value="{{ round.seq }}"><input type="hidden" name="pairing" value="{{ p.id }}"><input type="hidden" name="pairing_seq" value="{{ p.seq }}">
@@ -112,9 +112,11 @@
       {% if p.motion %}<div class="motion" style="margin:0 0 10px">{{ p.motion.text }}</div>{% endif %}
       <div class="vs">
       {% for m in p.members %}
+        {% if not forloop.first %}<div class="vsmark">vs</div>{% endif %}
         <div class="row"><div class="grow"><div class="side">{{ m.side_label }}</div><strong class="{% if p.winner and p.winner.team_id == m.team_id %}winner{% endif %}">{{ m.name }}{% if p.winner and p.winner.team_id == m.team_id %} ★{% endif %}</strong>{% if m.school %}<div class="muted">{{ m.school }}</div>{% endif %}</div>
           <input type="number" name="score_{{ m.team_id }}" min="0" max="{{ max_score }}" step="1" inputmode="numeric" pattern="[0-9]*" value="{{ m.score|default_if_none:'' }}" required {% if locked %}disabled{% endif %}></div>
       {% endfor %}
+      {% if p.is_swing %}<div class="vsmark">vs</div><div class="row"><div class="grow"><div class="side">Against</div><strong>Swing</strong><div class="muted">Automatic win for {{ p.members.0.name }}</div></div></div>{% endif %}
       </div>
       <p class="msg danger js-err" hidden style="margin:10px 0 0"></p>
       <p style="margin:10px 0 0"><button type="submit" {% if locked %}disabled{% endif %}>Save pair {{ p.seq }}</button></p>

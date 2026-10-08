@@ -1,6 +1,7 @@
 {% for p in block.pairings %}
   <div class="pair">
-    <div class="pair-head"><strong>Pair {{ p.seq }}</strong>{% if block.released and p.is_scored %}<span class="pill ok">Result</span>{% endif %}</div>
+    <div class="pair-head"><strong>Pair {{ p.seq }}</strong>
+      {% if block.released and p.is_scored %}<span class="pill ok">Result</span>{% elif p.is_released %}<span class="pill gold">Prep ends {{ p.prep_end_ist }}</span>{% else %}<span class="pill">Motion soon</span>{% endif %}</div>
     <div class="vs">
       {% for m in p.members %}
         {% if not forloop.first %}<div class="vsmark">vs</div>{% endif %}
@@ -9,9 +10,10 @@
           {% if m.school %}<div class="muted">{{ m.school }}</div>{% endif %}</div>
           {% if block.released and m.score is not None %}<span class="num" style="font-size:24px">{{ m.score }}</span>{% endif %}</div>
       {% endfor %}
+      {% if p.is_swing %}<div class="vsmark">vs</div><div class="row"><div class="grow"><div class="side">Against</div><strong>Swing</strong><div class="muted">Odd number in the batch — automatic win, speech still scored</div></div></div>{% endif %}
     </div>
-    {% if p.motion %}<div class="motion"><span class="lbl">Motion</span>{{ p.motion.text }}</div>{% endif %}
+    {% if p.is_released and p.motion %}<div class="motion"><span class="lbl">Motion</span>{{ p.motion.text }}</div>{% endif %}
   </div>
 {% empty %}
-  <p class="muted" style="font-family:var(--serif);font-style:italic;font-size:16px;margin:4px 0 0">The draw will appear here once the judge announces it.</p>
+  <p class="muted" style="font-family:var(--serif);font-style:italic;font-size:16px;margin:4px 0 0">The draw will appear here once the judge generates it.</p>
 {% endfor %}

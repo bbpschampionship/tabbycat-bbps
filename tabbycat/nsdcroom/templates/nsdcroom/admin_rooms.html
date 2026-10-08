@@ -20,6 +20,13 @@
 {% endif %}
 
 <section class="card">
+  <h2>Prep time</h2>
+  <form method="post" class="row">{% csrf_token %}<input type="hidden" name="round" value="{{ round.seq }}">
+    <label>Minutes after a pair's motion is released <input type="number" name="prep_minutes" value="{{ release.prep_minutes }}" min="1"></label>
+    <button name="action" value="prep_minutes">Save</button></form>
+</section>
+
+<section class="card">
   <h2>Final rankings {% if release.standings_released %}<span class="pill ok">public</span>{% else %}<span class="pill">hidden</span>{% endif %}</h2>
   <form method="post" class="row">{% csrf_token %}<input type="hidden" name="round" value="{{ round.seq }}">
     <label>Qualify top <input type="number" name="qualify_count" value="{{ release.qualify_count }}" min="0"></label>
@@ -30,12 +37,12 @@
 
 <section class="card">
   <h2>Rooms · {{ round.name }}</h2>
-  <table><thead><tr><th>Batch</th><th>Present</th><th>Pairs</th><th>Scored</th><th>Draw</th><th>Judge link</th></tr></thead><tbody>
+  <table><thead><tr><th>Batch</th><th>Present</th><th>Pairs</th><th>Scored</th><th>Motions out</th><th>Judge link</th></tr></thead><tbody>
   {% for row in rooms %}<tr>
     <td><strong>{{ row.label }}</strong><div class="muted">{{ row.count }} speakers</div></td>
     <td>{{ row.present }}</td><td>{{ row.pairs }}</td>
     <td>{% if row.pairs and row.scored == row.pairs %}<span class="pill ok">{{ row.scored }}/{{ row.pairs }}</span>{% else %}{{ row.scored }}/{{ row.pairs }}{% endif %}</td>
-    <td>{% if row.announced %}<span class="pill ok">announced</span>{% else %}<span class="pill">—</span>{% endif %}</td>
+    <td>{% if row.pairs %}{{ row.motions_out }}/{{ row.pairs }}{% else %}—{% endif %}</td>
     <td>{% for j in row.judges %}<div><strong>{{ j.judge.name|default:"Judge (name TBC)" }}</strong>{% if j.judge.phone %} · <a href="tel:{{ j.judge.phone|cut:' ' }}">{{ j.judge.phone }}</a>{% endif %}
       {% if j.judge.name %}<form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="round" value="{{ round.seq }}"><input type="hidden" name="judge" value="{{ j.judge.id }}"><button name="action" value="unassign_judge" class="ghost" style="padding:2px 8px;font-size:10px">to backups</button></form>{% endif %}<br>{% if j.url %}<a href="{{ j.url }}" target="_blank">{{ j.url }}</a>{% else %}<span class="pill bad">no private URL — generate under Private URLs</span>{% endif %}</div>{% empty %}<span class="pill bad">no judge</span>{% endfor %}</td>
   </tr>{% endfor %}

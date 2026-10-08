@@ -5,6 +5,16 @@
 {% block meta %}<div class="meta">Batch code {{ room.code }}{% if profile %} · {{ track.name }} · {{ profile.grades_label }}{% endif %}</div>{% endblock %}
 {% block content %}
 
+<section class="card help">
+  <div class="row" style="align-items:flex-start;gap:18px">
+    <div class="grow"><div class="side">Judge</div>
+      {% for j in judges %}<strong style="font-size:17px;color:var(--ink-strong)">{{ j.name }}</strong>{% if j.phone %} · <a href="tel:{{ j.phone|cut:' ' }}" style="white-space:nowrap">{{ j.phone }}</a>{% endif %}<br>{% empty %}<span style="font-family:var(--serif);font-style:italic;font-size:16px">To be announced</span>{% endfor %}</div>
+    <div class="grow"><div class="side">Point of contact</div>
+      {% if profile.poc_name %}<strong style="font-size:17px;color:var(--ink-strong)">{{ profile.poc_name }}</strong>{% if profile.poc_phone %} · <a href="tel:{{ profile.poc_phone|cut:' ' }}" style="white-space:nowrap">{{ profile.poc_phone }}</a>{% endif %}{% else %}<span style="font-family:var(--serif);font-style:italic;font-size:16px">To be announced</span>{% endif %}</div>
+  </div>
+  <p class="muted" style="margin:10px 0 0">Need help on the day? Call the judge or point of contact for this batch.</p>
+</section>
+
 {% if standings %}
 <div class="sec"><h2>Batch ranking</h2><span class="k">after {% for r in released_rounds %}{{ r.abbreviation }}{% if not forloop.last %}, {% endif %}{% endfor %}</span><span class="r"></span></div>
 <section class="card">

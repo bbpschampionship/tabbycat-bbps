@@ -39,6 +39,8 @@ class Pairing(models.Model):
     room = models.ForeignKey('participants.Institution', models.CASCADE)
     seq = models.PositiveIntegerField(help_text="Pair number within the room")
     motion = models.ForeignKey('motions.Motion', models.SET_NULL, null=True, blank=True)
+    motion_released_at = models.DateTimeField(null=True, blank=True)
+    prep_ends_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['seq']
@@ -57,15 +59,24 @@ class Pairing(models.Model):
         return bool(members) and all(m.score is not None for m in members)
 
     @property
+    def is_swing(self):
+        """A lone speaker debating the swing: they take For and win automatically."""
+        return len(self.members) == 1
+
+    @property
+    def is_released(self):
+        return self.motion_released_at is not None
+
+    @property
     def winner(self):
         members = self.members
-        if len(members) < 2 or not self.is_scored:
+        if not members or not self.is_scored:
             return None
         return max(members, key=lambda m: m.score)
 
 
 class PairingSpeaker(models.Model):
-    SIDE_LABELS = {1: "Proposition", 2: "Opposition", 3: "Third speaker"}
+    SIDE_LABELS = {1: "For", 2: "Against"}
 
     pairing = models.ForeignKey(Pairing, models.CASCADE)
     team = models.ForeignKey('participants.Team', models.CASCADE)
@@ -96,6 +107,7 @@ class TournamentRelease(models.Model):
     standings_released = models.BooleanField(default=False)
     qualify_count = models.PositiveIntegerField(default=16,
         help_text="How many top speakers qualify (highlighted on the public standings)")
+    prep_minutes = models.PositiveIntegerField(default=20, help_text="Prep time after a pair's motion is released")
 
 
 class BatchProfile(models.Model):
@@ -104,6 +116,8 @@ class BatchProfile(models.Model):
     track = models.CharField(max_length=40, blank=True, help_text='e.g. "A (Grade 3-5)"')
     time_slot = models.CharField(max_length=40, blank=True)
     grades = models.CharField(max_length=40, blank=True)
+    poc_name = models.CharField(max_length=100, blank=True)
+    poc_phone = models.CharField(max_length=40, blank=True)
 
     @property
     def grades_label(self):
@@ -119,3 +133,23 @@ class StudentProfile(models.Model):
     team = models.OneToOneField('participants.Team', models.CASCADE, related_name='nsdc_student')
     school = models.CharField(max_length=200, blank=True)
     grade = models.CharField(max_length=20, blank=True)
+
+
+class MotionTrack(models.Model):
+    """Which grade track (A/B/C) a motion belongs to; the judge's dropdown only offers their track's motions."""
+    motion = models.OneToOneField('motions.Motion', models.CASCADE, related_name='nsdc_track')
+    track = models.CharField(max_length=2, help_text="Track letter: A, B or C")
+
+
+class Notification(models.Model):
+    """One WhatsApp or email sent to a student when their pair's motion is released."""
+    pairing = models.ForeignKey(Pairing, models.CASCADE)
+    team = models.ForeignKey('participants.Team', models.CASCADE)
+    channel = models.CharField(max_length=10)  # whatsapp | email
+    destination = models.CharField(max_length=200, blank=True)
+    status = models.CharField(max_length=10)  # sent | failed | skipped
+    detail = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']

@@ -6,8 +6,10 @@ student table (No., Student Name, Grade, School Name, ...). Each student
 becomes a one-speaker team whose institution is the batch; each batch gets
 one judge slot with a blank name and a private URL.
 
-Contact details in the workbook are not imported. Re-running is safe: existing
-batches, students and judges are matched and updated, never duplicated.
+Each student's email and mobile are stored on their Speaker record so the judge
+room can message them when their motion is released; the public pages never show
+them. Re-running is safe: existing batches, students and judges are matched and
+updated, never duplicated.
 """
 import re
 
@@ -63,10 +65,16 @@ class Command(BaseCommand):
             if code not in batches:
                 raise CommandError(f"Sheet {ws.title!r}: batch code {code!r} not in the summary sheet")
             header = next(i for i, r in enumerate(rows) if r and r[1] == 'Student Name')
+            cols = [tidy(c).lower() for c in rows[header]]
+            ei = cols.index('email') if 'email' in cols else None
+            mi = cols.index('mobile') if 'mobile' in cols else None
             for r in rows[header + 1:]:
                 if r[0] is None or not r[1]:
                     continue
-                batches[code]['students'].append({'name': tidy_name(r[1]), 'grade': tidy(r[2]), 'school': tidy(r[3])})
+                batches[code]['students'].append({
+                    'name': tidy_name(r[1]), 'grade': tidy(r[2]), 'school': tidy(r[3]),
+                    'email': tidy(r[ei]).lower() if ei is not None else '',
+                    'phone': re.sub(r'\.0$', '', tidy(r[mi])) if mi is not None else ''})
         for code, b in batches.items():
             if b['expected'] is not None and len(b['students']) != b['expected']:
                 raise CommandError(f"Batch {code}: {len(b['students'])} students but summary says {b['expected']}")
@@ -103,8 +111,10 @@ class Command(BaseCommand):
                         reference = f"{s['name']} ({seen[reference]})"
                     team, _ = Team.objects.get_or_create(tournament=t, institution=inst, reference=reference,
                                                          defaults={'use_institution_prefix': False})
-                    if not team.speaker_set.exists():
-                        Speaker.objects.create(team=team, name=s['name'])
+                    speaker = team.speaker_set.first() or Speaker(team=team, name=s['name'])
+                    speaker.email = s['email'] or speaker.email
+                    speaker.phone = s['phone'] or speaker.phone
+                    speaker.save()
                     StudentProfile.objects.update_or_create(team=team, defaults={
                         'school': s['school'], 'grade': s['grade']})
 

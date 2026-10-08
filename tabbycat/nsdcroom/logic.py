@@ -2,7 +2,7 @@ import random
 from collections import defaultdict
 
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import models, transaction
 
 from motions.models import Motion
 from participants.models import Team
@@ -64,11 +64,19 @@ def tournament_rooms(tournament):
     return Institution.objects.filter(team__tournament=tournament).distinct().select_related('nsdc_batch').order_by('code', 'name')
 
 
-def round_motions(round):
-    motions = list(Motion.objects.filter(rounds=round).order_by('roundmotion__seq'))
-    if not motions:
-        motions = list(Motion.objects.filter(tournament=round.tournament).order_by('reference', 'id'))
-    return motions
+def round_motions(round, room=None):
+    """Motions for this round; with a room, only those tagged with the room's track (untagged ones always show)."""
+    qs = Motion.objects.filter(rounds=round)
+    if not qs.exists():
+        qs = Motion.objects.filter(tournament=round.tournament)
+    track = track_letter(room) if room is not None else ''
+    if track:
+        qs = qs.filter(models.Q(nsdc_track__track=track) | models.Q(nsdc_track__isnull=True))
+    return list(qs.distinct().order_by('roundmotion__seq', 'reference', 'id'))
+
+
+def track_letter(room):
+    return split_track(batch_track(room)).get('letter', '') if batch_track(room) else ''
 
 
 def pairings_for(round, room):
@@ -143,13 +151,16 @@ def _previous_opponents(round, room):
     earlier = round.tournament.prelim_rounds(before=round)
     opponents = defaultdict(set)
     prop_count = defaultdict(int)
+    swung = set()
     for pairing in Pairing.objects.filter(round__in=earlier, room=room).prefetch_related('pairingspeaker_set'):
         ids = [m.team_id for m in pairing.members]
+        if len(ids) == 1:
+            swung.add(ids[0])
         for m in pairing.members:
             opponents[m.team_id].update(i for i in ids if i != m.team_id)
             if m.side == 1:
                 prop_count[m.team_id] += 1
-    return earlier, opponents, prop_count
+    return earlier, opponents, prop_count, swung
 
 
 def _pair_up(order, opponents):
@@ -173,27 +184,28 @@ def _pair_up(order, opponents):
 
 
 def build_groups(round, room, team_ids, rng=None):
-    """Ordered list of groups (lists of team ids, side order). Pairs of two;
-    an odd room ends with one group of three (or a single speaker if alone)."""
+    """Ordered list of groups (lists of team ids, side order). Pairs of two; with an
+    odd number one speaker debates the swing (a group of one, side For, automatic win).
+    The swing goes to the lowest-ranked speaker who hasn't had one yet."""
     rng = rng or random.Random()
-    earlier, opponents, prop_count = _previous_opponents(round, room)
+    earlier, opponents, prop_count, swung = _previous_opponents(round, room)
     order = list(team_ids)
     rng.shuffle(order)
     stats = tally(earlier, set(order)) if earlier.exists() else {}
     if stats:  # power-pair: strongest first, random among equals
         order.sort(key=lambda t: (-stats.get(t, {}).get('total', 0), -stats.get(t, {}).get('wins', 0)))
 
-    trio = []
+    swing = None
     if len(order) % 2 == 1:
-        if len(order) == 1:
-            return [order]
-        trio, order = order[-3:], order[:-3]
+        candidates = [t for t in reversed(order) if t not in swung] or list(reversed(order))
+        swing = candidates[0]
+        order = [t for t in order if t != swing]
 
     groups = [list(p) for p in _pair_up(order, opponents)]
-    if trio:
-        groups.append(trio)
-    for g in groups:  # whoever has proposed more often opposes now
+    for g in groups:  # whoever has argued For more often argues Against now
         g.sort(key=lambda t: prop_count[t])
+    if swing is not None:
+        groups.append([swing])
     return groups
 
 
@@ -221,8 +233,10 @@ def apply_manual_draw(round, room, assignments, allowed_team_ids):
             raise ValidationError(f"Pair {pair_no} has two speakers on the same side.")
         groups[pair_no][side] = team_id
     for pair_no, sides in groups.items():
-        if len(sides) > 3:
-            raise ValidationError(f"Pair {pair_no} has more than three speakers.")
+        if any(side not in (1, 2) for side in sides):
+            raise ValidationError("Sides must be For or Against.")
+        if len(sides) == 1 and 1 not in sides:
+            raise ValidationError(f"Pair {pair_no} has one speaker: they debate the swing and must be on For.")
 
     old, old_motion_by_seq = {}, {}
     for p in pairings_for(round, room):
@@ -255,7 +269,7 @@ def apply_manual_draw(round, room, assignments, allowed_team_ids):
             continue
         # a changed line-up keeps the motion the judge had picked for that pair number
         pairing = Pairing.objects.create(round=round, room=room, seq=new_seq,
-                                         motion_id=old_motion_by_seq.get(new_seq))
+                                         motion_id=old_motion_by_seq.get(new_seq))  # judge re-releases it
         for side, team_id in enumerate(line_up, start=1):
             PairingSpeaker.objects.create(pairing=pairing, team_id=team_id, side=side)
 

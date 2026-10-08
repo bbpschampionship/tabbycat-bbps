@@ -9,8 +9,12 @@ from django.views import View
 from participants.models import Adjudicator, Institution
 from tournaments.models import Round, Tournament
 
-from . import logic
-from .models import MAX_SCORE, Attendance, Pairing, RoundRelease, TournamentRelease
+from datetime import timedelta
+
+from django.utils import timezone
+
+from . import logic, notify
+from .models import MAX_SCORE, Attendance, Notification, Pairing, RoundRelease, TournamentRelease
 
 
 class TournamentView(View):
@@ -46,8 +50,11 @@ class JudgeRoomView(TournamentView):
         self.judge = get_object_or_404(Adjudicator, tournament=self.tournament, url_key=kwargs['url_key'])
         self.room = self.judge.institution
 
-    ANCHORS = {'generate': 'draw', 'edit_draw': 'draw', 'motions': 'motions', 'announce': 'motions',
-               'unannounce': 'motions'}
+    ANCHORS = {'generate': 'draw', 'edit_draw': 'draw', 'motions': 'motions'}
+
+    def prep_minutes(self):
+        rel = TournamentRelease.objects.filter(tournament=self.tournament).first()
+        return rel.prep_minutes if rel else 20
 
     def here(self, round, anchor=''):
         url = reverse('nsdcroom-judge', kwargs={'tournament_slug': self.tournament.slug, 'url_key': self.judge.url_key})
@@ -69,6 +76,15 @@ class JudgeRoomView(TournamentView):
         pairings = logic.pairings_for(round, self.room)
         placed = {m.team_id: (p.seq, m.side) for p in pairings for m in p.members}
         logic.label_members(pairings, teams)
+        latest = {}
+        for n in Notification.objects.filter(pairing__in=pairings).order_by('created_at'):
+            latest[(n.pairing_id, n.team_id, n.channel)] = n
+        for p in pairings:
+            p.prep_end_ist = notify.ist_time(p.prep_ends_at)
+            p.released_ist = notify.ist_time(p.motion_released_at)
+            for m in p.members:
+                m.wa = latest.get((p.id, m.team_id, 'whatsapp'))
+                m.em = latest.get((p.id, m.team_id, 'email'))
 
         speakers = []
         for t in teams:
@@ -82,7 +98,8 @@ class JudgeRoomView(TournamentView):
 
         ctx.update({
             'speakers': speakers, 'present_count': len(present), 'pairings': pairings,
-            'motions': logic.round_motions(round), 'room_round': logic.room_round(round, self.room),
+            'motions': logic.round_motions(round, self.room), 'room_round': logic.room_round(round, self.room),
+            'prep_minutes': self.prep_minutes(),
             'locked': logic.results_released(round), 'unplaced_present': unplaced_present,
             'placed_absent': placed_absent,
             'pair_choices': range(1, max(len(pairings), (len(teams) + 1) // 2) + 2),
@@ -128,20 +145,23 @@ class JudgeRoomView(TournamentView):
             elif action == 'motions':
                 self.save_motions(round)
                 messages.success(request, "Motions saved.")
-            elif action in ('announce', 'unannounce'):
-                rr = logic.room_round(round, self.room)
-                pairings = logic.pairings_for(round, self.room)
-                if action == 'announce':
-                    self.save_motions(round)
-                    pairings = logic.pairings_for(round, self.room)
-                    if not pairings:
-                        raise ValidationError("Generate the draw first.")
-                    if any(p.motion_id is None for p in pairings):
-                        raise ValidationError("Pick a motion for every pair before announcing.")
-                rr.draw_announced = action == 'announce'
-                rr.save()
-                messages.success(request, "Draw announced — it is now on the public page." if rr.draw_announced
-                                 else "Draw hidden from the public page.")
+            elif action == 'release':
+                pairing = get_object_or_404(Pairing, id=request.POST.get('pairing'), round=round, room=self.room)
+                self.save_motions(round, only=pairing)
+                pairing.refresh_from_db()
+                if pairing.motion_id is None:
+                    raise ValidationError(f"Pick a motion for Pair {pairing.seq} first.")
+                now = timezone.now()
+                pairing.motion_released_at = now
+                pairing.prep_ends_at = now + timedelta(minutes=self.prep_minutes())
+                pairing.save(update_fields=['motion_released_at', 'prep_ends_at'])
+                rows = notify.notify_pairing(pairing, request.build_absolute_uri(reverse(
+                    'nsdcroom-public-batch', kwargs={'tournament_slug': self.tournament.slug, 'room_id': self.room.id})))
+                sent = sum(1 for r in rows if r.status == 'sent')
+                failed = sum(1 for r in rows if r.status == 'failed')
+                messages.success(request, f"Pair {pairing.seq}: motion released, prep ends at "
+                                 f"{notify.ist_time(pairing.prep_ends_at)}. Messages sent: {sent}"
+                                 + (f", failed: {failed}" if failed else "") + ".")
             elif action == 'score':
                 pairing = get_object_or_404(Pairing, id=request.POST.get('pairing'), round=round, room=self.room)
                 raw = {m.team_id: request.POST.get(f'score_{m.team_id}') for m in pairing.members}
@@ -154,13 +174,16 @@ class JudgeRoomView(TournamentView):
         except ValueError:
             messages.error(request, "Something in the form was not a number.")
         anchor = self.ANCHORS.get(action, '')
+        if action == 'release':
+            anchor = 'motions'
         if action == 'score':
             anchor = f"pair-{request.POST.get('pairing_seq', '')}" if request.POST.get('pairing_seq') else 'results'
         return self.here(round, anchor)
 
-    def save_motions(self, round):
-        allowed = {m.id for m in logic.round_motions(round)}
-        for p in Pairing.objects.filter(round=round, room=self.room):
+    def save_motions(self, round, only=None):
+        allowed = {m.id for m in logic.round_motions(round, self.room)}
+        pairings = [only] if only else Pairing.objects.filter(round=round, room=self.room)
+        for p in pairings:
             key = f'motion_{p.id}'
             if key not in self.request.POST:
                 continue
@@ -191,11 +214,12 @@ def request_has(request, key):
 def _public_round_blocks(tournament, room, rounds, teams):
     blocks = []
     for r in rounds:
-        rr = logic.room_round(r, room)
         released = logic.results_released(r)
-        pairings = logic.pairings_for(r, room) if (rr.draw_announced or released) else []
+        pairings = logic.pairings_for(r, room)
         logic.label_members(pairings, teams)
-        blocks.append({'round': r, 'announced': rr.draw_announced, 'released': released,
+        for p in pairings:
+            p.prep_end_ist = notify.ist_time(p.prep_ends_at)
+        blocks.append({'round': r, 'announced': bool(pairings), 'released': released,
                        'pairings': pairings})
     return blocks
 
@@ -236,7 +260,7 @@ class PublicHomeView(TournamentView):
             tracks[profile.track if profile else ''] += 1
         rounds = self.rounds()
         round = self.pick_round(rounds)
-        live = round and logic.RoomRound.objects.filter(round=round, draw_announced=True).exists()
+        live = round and Pairing.objects.filter(round=round, room__team__tournament=self.tournament).exists()
         release = TournamentRelease.objects.filter(tournament=self.tournament).first()
         return render(request, 'nsdcroom/public_home.html', {
             'tournament': self.tournament, 'students': students, 'room_count': len(rooms),
@@ -280,7 +304,7 @@ class PublicJudgesView(TournamentView):
     def get(self, request, *args, **kwargs):
         rows = []
         for room in logic.tournament_rooms(self.tournament):
-            judges = [j.name for j in Adjudicator.objects.filter(tournament=self.tournament, institution=room) if j.name]
+            judges = [j for j in Adjudicator.objects.filter(tournament=self.tournament, institution=room).order_by('id') if j.name]
             rows.append({'room': room, 'profile': getattr(room, 'nsdc_batch', None), 'judges': judges})
         return render(request, 'nsdcroom/public_judges.html', {'tournament': self.tournament, 'rows': rows, 'nav': 'judges'})
 
@@ -299,6 +323,7 @@ class PublicBatchView(TournamentView):
                           key=lambda s: s['name'].lower())
         return render(request, 'nsdcroom/public_batch.html', {
             'tournament': self.tournament, 'room': room, 'rounds': rounds, 'nav': 'batches',
+            'judges': [j for j in Adjudicator.objects.filter(tournament=self.tournament, institution=room).order_by('id') if j.name],
             'label': logic.batch_label(room), 'profile': getattr(room, 'nsdc_batch', None),
             'track': logic.split_track(getattr(getattr(room, 'nsdc_batch', None), 'track', '')),
             'blocks': _public_round_blocks(self.tournament, room, rounds, teams),
@@ -369,7 +394,7 @@ class AdminRoomsView(TournamentView):
                 pairings = logic.pairings_for(round, room)
                 row.update({'present': len(logic.present_team_ids(round, teams)), 'pairs': len(pairings),
                             'scored': sum(1 for p in pairings if p.is_scored),
-                            'announced': logic.room_round(round, room).draw_announced})
+                            'motions_out': sum(1 for p in pairings if p.is_released)})
             rooms.append(row)
         def judge_url(j):
             return request.build_absolute_uri(reverse('nsdcroom-judge', kwargs={
@@ -400,6 +425,14 @@ class AdminRoomsView(TournamentView):
                 judge.institution = None
                 messages.success(request, f"{judge.name} moved back to the backup list.")
             judge.save()
+        elif action == 'prep_minutes':
+            rel, _ = TournamentRelease.objects.get_or_create(tournament=self.tournament)
+            try:
+                rel.prep_minutes = max(1, int(request.POST.get('prep_minutes')))
+                rel.save()
+                messages.success(request, f"Prep time set to {rel.prep_minutes} minutes.")
+            except (TypeError, ValueError):
+                messages.error(request, "Prep time must be a whole number of minutes.")
         elif action in ('release_standings', 'hide_standings'):
             rel, _ = TournamentRelease.objects.get_or_create(tournament=self.tournament)
             rel.standings_released = action == 'release_standings'
