@@ -228,3 +228,10 @@ class ProfileDisplayTests(RoomTestBase):
         resp = self.client.get(reverse('nsdcroom-public-students', kwargs={'tournament_slug': self.t.slug}))
         self.assertContains(resp, 'Kid 7')
         self.assertContains(resp, 'Batch A')
+
+    def test_tournament_home_goes_to_batches(self):
+        from nsdcroom.models import BatchProfile
+        BatchProfile.objects.create(institution=self.room, track='A')
+        resp = self.client.get(reverse('tournament-public-index', kwargs={'tournament_slug': self.t.slug}))
+        self.assertRedirects(resp, reverse('nsdcroom-public-batches', kwargs={'tournament_slug': self.t.slug}),
+                             fetch_redirect_response=False)

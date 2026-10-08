@@ -7,15 +7,15 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-  <title>{% if tournament %}{{ tournament.short_name }}{% else %}Vox Debating Championship{% endif %} | {% if page_title %}{{ page_title }}{% else %}{% block page-title %}{% endblock %}{% endif %}</title>
+  <title>{% if tournament %}{{ tournament.short_name }}{% else %}NSDC 2026{% endif %} | {% if page_title %}{{ page_title }}{% else %}{% block page-title %}{% endblock %}{% endif %}</title>
 
   {% if tournament %}
     {% blocktrans trimmed with tournament=tournament.short_name asvar meta_description %}
-      The official tab site for {{ tournament }} — the Vox Debating Championship, Shalom Presidency School's intra-school WSDC-format championship, organised by Vox Shalom in collaboration with Taivas Debate Club.
+      The official tab site for {{ tournament }} — National School Debating Championship 2026, run by Taivas Debate Club.
     {% endblocktrans %}
   {% else %}
     {% blocktrans trimmed asvar meta_description %}
-      Official tab site for the Vox Debating Championship — the WSDC-format intra-school debating championship of Shalom Presidency School, organised by Vox Shalom in collaboration with Taivas Debate Club.
+      Official tab site for the National School Debating Championship 2026, run by Taivas Debate Club.
     {% endblocktrans %}
   {% endif %}
   <meta name="description" content="{{ meta_description }}" />

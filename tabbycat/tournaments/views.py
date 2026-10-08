@@ -63,6 +63,13 @@ class PublicSiteIndexView(WarnAboutDatabaseUseMixin, WarnAboutLegacySendgridConf
 class TournamentPublicHomeView(CacheMixin, TournamentMixin, TemplateView):
     template_name = 'public_tournament_index.html'
 
+    def get(self, request, *args, **kwargs):
+        # NSDC qualifiers run on judge rooms: the public face is the batches tab
+        from nsdcroom.models import BatchProfile
+        if BatchProfile.objects.filter(institution__team__tournament=self.tournament).exists():
+            return redirect(reverse_tournament('nsdcroom-public-batches', self.tournament))
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         kwargs['public_index'] = True
         return super().get_context_data(**kwargs)
