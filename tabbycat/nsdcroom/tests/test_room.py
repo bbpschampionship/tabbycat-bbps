@@ -282,3 +282,29 @@ class ParentHomeTests(RoomTestBase):
         home = self.client.get(reverse('nsdcroom-public-batches', kwargs=kw))
         for name in ('Batches', 'Participants', 'Judges', 'Rounds', 'Results', 'Rankings'):
             self.assertContains(home, name)
+
+
+class JudgeAllocationTests(RoomTestBase):
+
+    def test_phone_private_and_backup_assignment(self):
+        self.judge.phone = '+91 90000 11111'
+        self.judge.save()
+        backup = Adjudicator.objects.create(tournament=self.t, name='Backup B', phone='+91 90000 22222', url_key='backupkeybbbb')
+        kw = {'tournament_slug': self.t.slug}
+        public = self.client.get(reverse('nsdcroom-public-judges', kwargs=kw))
+        self.assertContains(public, 'Judge A')
+        self.assertNotContains(public, '90000')
+        self.assertNotContains(public, 'Backup B')
+        admin = get_user_model().objects.create_superuser('boss', 'b@example.com', 'pw')
+        self.client.force_login(admin)
+        page = self.client.get(reverse('nsdcroom-admin', kwargs=kw))
+        self.assertContains(page, '+91 90000 11111')
+        self.assertContains(page, 'backupkeybbbb')
+        resp = self.client.post(reverse('nsdcroom-admin', kwargs=kw),
+                                {'action': 'assign_judge', 'judge': backup.id, 'room': self.room.id, 'round': 1}, follow=True)
+        self.assertContains(resp, 'can now run Batch A')
+        backup.refresh_from_db()
+        self.assertEqual(backup.institution, self.room)
+        self.client.logout()
+        judge_page = self.client.get(reverse('nsdcroom-judge', kwargs={**kw, 'url_key': 'backupkeybbbb'}))
+        self.assertContains(judge_page, 'Kid 1')

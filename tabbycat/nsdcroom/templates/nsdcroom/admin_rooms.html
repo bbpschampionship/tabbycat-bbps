@@ -36,9 +36,23 @@
     <td>{{ row.present }}</td><td>{{ row.pairs }}</td>
     <td>{% if row.pairs and row.scored == row.pairs %}<span class="pill ok">{{ row.scored }}/{{ row.pairs }}</span>{% else %}{{ row.scored }}/{{ row.pairs }}{% endif %}</td>
     <td>{% if row.announced %}<span class="pill ok">announced</span>{% else %}<span class="pill">—</span>{% endif %}</td>
-    <td>{% for j in row.judges %}<div>{{ j.judge.name|default:"Judge (name TBC)" }}: {% if j.url %}<a href="{{ j.url }}" target="_blank">{{ j.url }}</a>{% else %}<span class="pill bad">no private URL — generate under Private URLs</span>{% endif %}</div>{% empty %}<span class="pill bad">no judge</span>{% endfor %}</td>
+    <td>{% for j in row.judges %}<div><strong>{{ j.judge.name|default:"Judge (name TBC)" }}</strong>{% if j.judge.phone %} · <a href="tel:{{ j.judge.phone|cut:' ' }}">{{ j.judge.phone }}</a>{% endif %}
+      {% if j.judge.name %}<form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="round" value="{{ round.seq }}"><input type="hidden" name="judge" value="{{ j.judge.id }}"><button name="action" value="unassign_judge" class="ghost" style="padding:2px 8px;font-size:10px">to backups</button></form>{% endif %}<br>{% if j.url %}<a href="{{ j.url }}" target="_blank">{{ j.url }}</a>{% else %}<span class="pill bad">no private URL — generate under Private URLs</span>{% endif %}</div>{% empty %}<span class="pill bad">no judge</span>{% endfor %}</td>
   </tr>{% endfor %}
   </tbody></table>
-  {% if orphan_judges %}<p class="msg warning">Judges with no batch (set their institution to the batch): {% for j in orphan_judges %}{{ j.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+</section>
+
+<section class="card">
+  <h2>Backup judges</h2>
+  <p class="muted">Not attached to a batch. To cover a batch, pick it and assign: the backup then runs that batch with their own link below (the original judge's link keeps working too).</p>
+  {% for o in orphan_judges %}
+  <div class="row" style="padding:10px 0;border-bottom:1px solid var(--line-soft)">
+    <div class="grow"><strong>{{ o.judge.name }}</strong>{% if o.judge.phone %} · <a href="tel:{{ o.judge.phone|cut:' ' }}">{{ o.judge.phone }}</a>{% endif %}
+      <div class="muted" style="word-break:break-all">{% if o.url %}<a href="{{ o.url }}" target="_blank">{{ o.url }}</a>{% endif %}</div></div>
+    <form method="post" class="row">{% csrf_token %}<input type="hidden" name="round" value="{{ round.seq }}"><input type="hidden" name="judge" value="{{ o.judge.id }}">
+      <select name="room" required><option value="">— batch —</option>{% for rm in all_rooms %}<option value="{{ rm.id }}">{{ rm.code }} · {{ rm.name }}</option>{% endfor %}</select>
+      <button name="action" value="assign_judge">Assign</button></form>
+  </div>
+  {% empty %}<p class="muted">No backup judges.</p>{% endfor %}
 </section>
 {% endblock %}

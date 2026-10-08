@@ -371,12 +371,16 @@ class AdminRoomsView(TournamentView):
                             'scored': sum(1 for p in pairings if p.is_scored),
                             'announced': logic.room_round(round, room).draw_announced})
             rooms.append(row)
-        orphan_judges = Adjudicator.objects.filter(tournament=self.tournament, institution__isnull=True)
+        def judge_url(j):
+            return request.build_absolute_uri(reverse('nsdcroom-judge', kwargs={
+                'tournament_slug': self.tournament.slug, 'url_key': j.url_key})) if j.url_key else None
+        orphan_judges = [{'judge': j, 'url': judge_url(j)} for j in
+                         Adjudicator.objects.filter(tournament=self.tournament, institution__isnull=True).order_by('name')]
         return render(request, 'nsdcroom/admin_rooms.html', {
             'tournament': self.tournament, 'rounds': rounds, 'round': round, 'rooms': rooms,
             'released': logic.results_released(round) if round else False,
             'release': TournamentRelease.objects.get_or_create(tournament=self.tournament)[0],
-            'orphan_judges': orphan_judges})
+            'orphan_judges': orphan_judges, 'all_rooms': [r['room'] for r in rooms]})
 
     def post(self, request, *args, **kwargs):
         rounds = self.rounds()
@@ -387,6 +391,15 @@ class AdminRoomsView(TournamentView):
             rel.results_released = action == 'release_results'
             rel.save()
             messages.success(request, f"{round.name} results {'released' if rel.results_released else 'hidden'}.")
+        elif action in ('assign_judge', 'unassign_judge'):
+            judge = get_object_or_404(Adjudicator, tournament=self.tournament, id=request.POST.get('judge'))
+            if action == 'assign_judge':
+                judge.institution = get_object_or_404(Institution, id=request.POST.get('room'))
+                messages.success(request, f"{judge.name} can now run {judge.institution.name} (Batch {judge.institution.code}) with the same link.")
+            else:
+                judge.institution = None
+                messages.success(request, f"{judge.name} moved back to the backup list.")
+            judge.save()
         elif action in ('release_standings', 'hide_standings'):
             rel, _ = TournamentRelease.objects.get_or_create(tournament=self.tournament)
             rel.standings_released = action == 'release_standings'
