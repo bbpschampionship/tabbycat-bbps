@@ -4,7 +4,7 @@
     <div class="vs">
       {% for m in p.members %}
         <div class="row"><div class="grow"><div class="side">{{ m.side_label }}</div>
-          <strong class="{% if block.released and p.winner.team_id == m.team_id %}winner{% endif %}">{{ m.name }}{% if block.released and p.winner.team_id == m.team_id %} ★ winner{% endif %}</strong></div>
+          <strong class="{% if block.released and p.winner.team_id == m.team_id %}winner{% endif %}">{{ m.name }}{% if block.released and p.winner.team_id == m.team_id %} ★ winner{% endif %}</strong>{% if m.school %}<div class="muted">{{ m.school }}</div>{% endif %}</div>
           {% if block.released and m.score is not None %}<strong style="font-size:20px">{{ m.score }}</strong>{% endif %}</div>
       {% endfor %}
     </div>

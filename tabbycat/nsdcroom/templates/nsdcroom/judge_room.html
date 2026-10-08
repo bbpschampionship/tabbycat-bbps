@@ -1,7 +1,7 @@
 {% extends "nsdcroom/base.html" %}
-{% block title %}Judge · {{ room.name|default:"No batch" }}{% endblock %}
-{% block eyebrow %}Judge console · {{ judge.name }}{% endblock %}
-{% block heading %}{{ room.name|default:"No batch assigned" }}{% endblock %}
+{% block title %}Judge · {{ batch_label|default:"No batch" }}{% endblock %}
+{% block eyebrow %}Judge console{% if judge.name %} · {{ judge.name }}{% endif %}{% if room.nsdc_batch.time_slot %} · {{ room.nsdc_batch.time_slot }}{% endif %}{% endblock %}
+{% block heading %}{{ batch_label|default:"No batch assigned" }}{% endblock %}
 {% block content %}
 {% if not room %}
   <div class="card">You are not assigned to a batch yet. Please contact the tab team.</div>
@@ -21,7 +21,7 @@
     <input type="hidden" name="action" value="attendance"><input type="hidden" name="round" value="{{ round.seq }}">
     {% for s in speakers %}
       <label class="check"><input type="checkbox" name="present_{{ s.team.id }}" {% if s.present %}checked{% endif %} {% if locked %}disabled{% endif %}>
-        <span class="grow">{{ s.name }}</span>
+        <span class="grow">{{ s.name }}{% if s.school %}<br><span class="muted">{{ s.school }}</span>{% endif %}</span>
         {% if s.marked and not s.present %}<span class="pill bad">absent</span>{% endif %}
       </label>
     {% empty %}<p>No speakers in this batch.</p>{% endfor %}
@@ -112,7 +112,7 @@
       {% if p.motion %}<div class="motion" style="margin:0 0 10px">{{ p.motion.text }}</div>{% endif %}
       <div class="vs">
       {% for m in p.members %}
-        <div class="row"><div class="grow"><div class="side">{{ m.side_label }}</div><strong class="{% if p.winner and p.winner.team_id == m.team_id %}winner{% endif %}">{{ m.name }}{% if p.winner and p.winner.team_id == m.team_id %} ★{% endif %}</strong></div>
+        <div class="row"><div class="grow"><div class="side">{{ m.side_label }}</div><strong class="{% if p.winner and p.winner.team_id == m.team_id %}winner{% endif %}">{{ m.name }}{% if p.winner and p.winner.team_id == m.team_id %} ★{% endif %}</strong>{% if m.school %}<div class="muted">{{ m.school }}</div>{% endif %}</div>
           <input type="number" name="score_{{ m.team_id }}" min="0" max="{{ max_score }}" step="1" inputmode="numeric" pattern="[0-9]*" value="{{ m.score|default_if_none:'' }}" required {% if locked %}disabled{% endif %}></div>
       {% endfor %}
       </div>
@@ -127,7 +127,7 @@
   <h2>Batch standings so far</h2>
   <p class="muted">Visible to you only until the tab team releases results.</p>
   <table><thead><tr><th>#</th><th>Speaker</th><th>Wins</th><th>Total</th></tr></thead><tbody>
-  {% for r in standings %}<tr><td>{{ r.rank }}</td><td>{{ r.name }}</td><td>{{ r.wins }}</td><td><strong>{{ r.total }}</strong></td></tr>{% endfor %}
+  {% for r in standings %}<tr><td>{{ r.rank }}</td><td>{{ r.name }}{% if r.school %}<div class="muted">{{ r.school }}</div>{% endif %}</td><td>{{ r.wins }}</td><td><strong>{{ r.total }}</strong></td></tr>{% endfor %}
   </tbody></table>
 </section>
 {% endif %}

@@ -17,14 +17,37 @@ def team_name(team):
     return team.reference or team.short_name
 
 
+def team_school(team):
+    profile = getattr(team, 'nsdc_student', None)
+    return profile.school if profile else ''
+
+
+def batch_label(room):
+    return f"{room.name} · Batch {room.code}" if room.code else room.name
+
+
+def batch_track(room):
+    profile = getattr(room, 'nsdc_batch', None)
+    return profile.track if profile else ''
+
+
+def label_members(pairings, teams):
+    by_id = {t.id: t for t in teams}
+    for p in pairings:
+        for m in p.members:
+            t = by_id.get(m.team_id)
+            m.name = team_name(t) if t else '?'
+            m.school = team_school(t) if t else ''
+
+
 def room_teams(tournament, room):
     return list(Team.objects.filter(tournament=tournament, institution=room)
-                .prefetch_related('speaker_set').order_by('reference'))
+                .select_related('nsdc_student').prefetch_related('speaker_set').order_by('reference'))
 
 
 def tournament_rooms(tournament):
     from participants.models import Institution
-    return Institution.objects.filter(team__tournament=tournament).distinct().order_by('name')
+    return Institution.objects.filter(team__tournament=tournament).distinct().select_related('nsdc_batch').order_by('code', 'name')
 
 
 def round_motions(round):
@@ -87,7 +110,7 @@ def ranked(teams, rounds):
     rows = []
     for t in teams:
         s = stats.get(t.id, {'total': 0, 'wins': 0, 'debated': 0, 'by_round': {}})
-        rows.append({'team': t, 'name': team_name(t), **s})
+        rows.append({'team': t, 'name': team_name(t), 'school': team_school(t), **s})
     rows.sort(key=lambda r: (-r['total'], -r['wins'], r['name'].lower()))
     prev, rank = None, 0
     for i, r in enumerate(rows, start=1):

@@ -1,0 +1,24 @@
+{% extends "nsdcroom/base.html" %}
+{% block title %}Students · {{ tournament.short_name|default:tournament.name }}{% endblock %}
+{% block heading %}Find your batch{% endblock %}
+{% block content %}
+<nav class="tabs"><a href="{% url 'nsdcroom-public-batches' tournament_slug=tournament.slug %}">← Batches &amp; draw</a></nav>
+<section class="card">
+  <input type="text" id="q" placeholder="Type a student or school name…" autocomplete="off" style="width:100%;font-size:17px">
+  <p class="muted" id="count" style="margin:8px 0 0">{{ students|length }} students</p>
+  <div style="overflow-x:auto">
+  <table id="list"><thead><tr><th>Student</th><th>School</th><th>Batch</th><th>Code</th></tr></thead><tbody>
+  {% for s in students %}<tr><td><strong>{{ s.name }}</strong></td><td>{{ s.school }}</td>
+    <td style="white-space:nowrap">{% if s.room %}<a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=s.room.id %}">{{ s.room.name }}</a>{% endif %}</td><td>{{ s.room.code }}</td></tr>{% endfor %}
+  </tbody></table>
+  </div>
+</section>
+<script>
+var q = document.getElementById('q'), rows = [].slice.call(document.querySelectorAll('#list tbody tr'));
+q.addEventListener('input', function () {
+  var v = q.value.trim().toLowerCase(), n = 0;
+  rows.forEach(function (r) { var show = !v || r.textContent.toLowerCase().indexOf(v) !== -1; r.hidden = !show; if (show) n++; });
+  document.getElementById('count').textContent = n + ' students';
+});
+</script>
+{% endblock %}

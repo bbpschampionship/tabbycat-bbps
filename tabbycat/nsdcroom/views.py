@@ -58,6 +58,7 @@ class JudgeRoomView(TournamentView):
         rounds = self.rounds()
         round = self.pick_round(rounds)
         ctx = {'tournament': self.tournament, 'judge': self.judge, 'room': self.room,
+               'batch_label': logic.batch_label(self.room) if self.room else '',
                'rounds': rounds, 'round': round, 'max_score': MAX_SCORE}
         if self.room is None or round is None:
             return render(request, self.template_name, ctx)
@@ -67,14 +68,12 @@ class JudgeRoomView(TournamentView):
         marked = set(Attendance.objects.filter(round=round, team__in=teams).values_list('team_id', flat=True))
         pairings = logic.pairings_for(round, self.room)
         placed = {m.team_id: (p.seq, m.side) for p in pairings for m in p.members}
-        names = {t.id: logic.team_name(t) for t in teams}
-        for p in pairings:
-            for m in p.members:
-                m.name = names.get(m.team_id, '?')
+        logic.label_members(pairings, teams)
 
         speakers = []
         for t in teams:
-            speakers.append({'team': t, 'name': names[t.id], 'present': t.id in present,
+            speakers.append({'team': t, 'name': logic.team_name(t), 'school': logic.team_school(t),
+                             'present': t.id in present,
                              'marked': t.id in marked, 'pair': placed.get(t.id, (None, None))[0],
                              'side': placed.get(t.id, (None, None))[1]})
         speakers.sort(key=lambda s: s['name'].lower())
@@ -189,15 +188,13 @@ def request_has(request, key):
 # Public pages
 # ==============================================================================
 
-def _public_round_blocks(tournament, room, rounds, names):
+def _public_round_blocks(tournament, room, rounds, teams):
     blocks = []
     for r in rounds:
         rr = logic.room_round(r, room)
         released = logic.results_released(r)
         pairings = logic.pairings_for(r, room) if (rr.draw_announced or released) else []
-        for p in pairings:
-            for m in p.members:
-                m.name = names.get(m.team_id, '?')
+        logic.label_members(pairings, teams)
         blocks.append({'round': r, 'announced': rr.draw_announced, 'released': released,
                        'pairings': pairings})
     return blocks
@@ -211,9 +208,9 @@ class PublicBatchesView(TournamentView):
         rooms = []
         for room in logic.tournament_rooms(self.tournament):
             teams = logic.room_teams(self.tournament, room)
-            names = {t.id: logic.team_name(t) for t in teams}
-            block = _public_round_blocks(self.tournament, room, [round], names)[0] if round else None
-            rooms.append({'room': room, 'count': len(teams), 'block': block})
+            block = _public_round_blocks(self.tournament, room, [round], teams)[0] if round else None
+            rooms.append({'room': room, 'label': logic.batch_label(room), 'profile': getattr(room, 'nsdc_batch', None),
+                          'count': len(teams), 'block': block})
         release = TournamentRelease.objects.filter(tournament=self.tournament).first()
         return render(request, 'nsdcroom/public_batches.html', {
             'tournament': self.tournament, 'rounds': rounds, 'round': round, 'rooms': rooms,
@@ -228,30 +225,48 @@ class PublicBatchView(TournamentView):
         if not teams:
             raise Http404
         rounds = self.rounds()
-        names = {t.id: logic.team_name(t) for t in teams}
         released_rounds = [r for r in rounds if logic.results_released(r)]
+        students = sorted(({'name': logic.team_name(t), 'school': logic.team_school(t)} for t in teams),
+                          key=lambda s: s['name'].lower())
         return render(request, 'nsdcroom/public_batch.html', {
             'tournament': self.tournament, 'room': room, 'rounds': rounds,
-            'blocks': _public_round_blocks(self.tournament, room, rounds, names),
-            'names': sorted(names.values(), key=str.lower),
+            'label': logic.batch_label(room), 'profile': getattr(room, 'nsdc_batch', None),
+            'blocks': _public_round_blocks(self.tournament, room, rounds, teams),
+            'students': students,
             'released_rounds': released_rounds,
             'standings': logic.ranked(teams, released_rounds) if released_rounds else []})
+
+
+class PublicStudentsView(TournamentView):
+
+    def get(self, request, *args, **kwargs):
+        teams = (self.tournament.team_set.select_related('institution__nsdc_batch', 'nsdc_student')
+                 .prefetch_related('speaker_set'))
+        students = sorted(({'name': logic.team_name(t), 'school': logic.team_school(t), 'room': t.institution}
+                           for t in teams), key=lambda s: s['name'].lower())
+        return render(request, 'nsdcroom/public_students.html', {'tournament': self.tournament, 'students': students})
 
 
 class PublicStandingsView(TournamentView):
 
     def get(self, request, *args, **kwargs):
         release = TournamentRelease.objects.filter(tournament=self.tournament).first()
-        rows = []
+        tracks = []
         if release and release.standings_released:
-            rooms = {t.id: t.institution for t in self.tournament.team_set.select_related('institution')}
-            teams = list(self.tournament.team_set.prefetch_related('speaker_set'))
-            rows = logic.ranked(teams, self.rounds())
-            for r in rows:
-                r['room'] = rooms.get(r['team'].id)
-                r['qualified'] = r['rank'] <= release.qualify_count
+            teams = list(self.tournament.team_set.select_related('institution__nsdc_batch', 'nsdc_student')
+                         .prefetch_related('speaker_set'))
+            by_track = {}
+            for t in teams:
+                by_track.setdefault(logic.batch_track(t.institution) if t.institution else '', []).append(t)
+            rounds = self.rounds()
+            for track in sorted(by_track):
+                rows = logic.ranked(by_track[track], rounds)
+                for r in rows:
+                    r['batch'] = logic.batch_label(r['team'].institution) if r['team'].institution else ''
+                    r['qualified'] = r['rank'] <= release.qualify_count
+                tracks.append({'track': track, 'rows': rows})
         return render(request, 'nsdcroom/public_standings.html', {
-            'tournament': self.tournament, 'rows': rows, 'release': release, 'rounds': self.rounds()})
+            'tournament': self.tournament, 'tracks': tracks, 'release': release, 'rounds': self.rounds()})
 
 
 # ==============================================================================
@@ -274,7 +289,7 @@ class AdminRoomsView(TournamentView):
         for room in logic.tournament_rooms(self.tournament):
             teams = logic.room_teams(self.tournament, room)
             judges = list(Adjudicator.objects.filter(tournament=self.tournament, institution=room))
-            row = {'room': room, 'count': len(teams), 'judges': [
+            row = {'room': room, 'label': logic.batch_label(room), 'count': len(teams), 'judges': [
                 {'judge': j, 'url': request.build_absolute_uri(reverse('nsdcroom-judge', kwargs={
                     'tournament_slug': self.tournament.slug, 'url_key': j.url_key})) if j.url_key else None}
                 for j in judges]}

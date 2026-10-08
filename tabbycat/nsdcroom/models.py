@@ -96,3 +96,17 @@ class TournamentRelease(models.Model):
     standings_released = models.BooleanField(default=False)
     qualify_count = models.PositiveIntegerField(default=16,
         help_text="How many top speakers qualify (highlighted on the public standings)")
+
+
+class BatchProfile(models.Model):
+    """Extra batch details shown on the public tab (batch = Institution: name + code)."""
+    institution = models.OneToOneField('participants.Institution', models.CASCADE, related_name='nsdc_batch')
+    track = models.CharField(max_length=40, blank=True, help_text='e.g. "A (Grade 3-5)"')
+    time_slot = models.CharField(max_length=40, blank=True)
+    grades = models.CharField(max_length=40, blank=True)
+
+
+class StudentProfile(models.Model):
+    team = models.OneToOneField('participants.Team', models.CASCADE, related_name='nsdc_student')
+    school = models.CharField(max_length=200, blank=True)
+    grade = models.CharField(max_length=20, blank=True)

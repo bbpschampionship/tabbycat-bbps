@@ -1,18 +1,19 @@
 {% extends "nsdcroom/base.html" %}
-{% block title %}{{ room.name }} · {{ tournament.short_name|default:tournament.name }}{% endblock %}
-{% block heading %}{{ room.name }}{% endblock %}
+{% block title %}{{ label }} · {{ tournament.short_name|default:tournament.name }}{% endblock %}
+{% block heading %}{{ label }}{% endblock %}
 {% block content %}
 <nav class="tabs"><a href="{% url 'nsdcroom-public-batches' tournament_slug=tournament.slug %}">← All batches</a></nav>
+{% if profile %}<p class="muted">Batch name <strong>{{ room.name }}</strong> · Batch code <strong>{{ room.code }}</strong> · Track {{ profile.track }} · {{ profile.time_slot }}</p>{% endif %}
 
 {% if standings %}
 <section class="card">
   <h2>Batch ranking</h2>
   <p class="muted">After {% for r in released_rounds %}{{ r.name }}{% if not forloop.last %}, {% endif %}{% endfor %}. Ranked by total score, then wins.</p>
-  <table><thead><tr><th>#</th><th>Speaker</th>{% for r in released_rounds %}<th>{{ r.abbreviation }}</th>{% endfor %}<th>Wins</th><th>Total</th></tr></thead><tbody>
-  {% for row in standings %}<tr><td>{{ row.rank }}</td><td>{{ row.name }}</td>
+  <div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Speaker</th>{% for r in released_rounds %}<th>{{ r.abbreviation }}</th>{% endfor %}<th>Wins</th><th>Total</th></tr></thead><tbody>
+  {% for row in standings %}<tr><td>{{ row.rank }}</td><td>{{ row.name }}{% if row.school %}<div class="muted">{{ row.school }}</div>{% endif %}</td>
     {% for r in released_rounds %}<td>{% for rid, sc in row.by_round.items %}{% if rid == r.id %}{{ sc }}{% endif %}{% endfor %}</td>{% endfor %}
     <td>{{ row.wins }}</td><td><strong>{{ row.total }}</strong></td></tr>{% endfor %}
-  </tbody></table>
+  </tbody></table></div>
 </section>
 {% endif %}
 
@@ -24,7 +25,9 @@
 {% endfor %}
 
 <section class="card">
-  <h2>Speakers in this batch</h2>
-  <p>{% for n in names %}{{ n }}{% if not forloop.last %} · {% endif %}{% endfor %}</p>
+  <h2>Students in this batch ({{ students|length }})</h2>
+  <div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Student</th><th>School</th><th>Batch</th><th>Code</th></tr></thead><tbody>
+  {% for s in students %}<tr><td>{{ forloop.counter }}</td><td><strong>{{ s.name }}</strong></td><td>{{ s.school }}</td><td style="white-space:nowrap">{{ room.name }}</td><td>{{ room.code }}</td></tr>{% endfor %}
+  </tbody></table></div>
 </section>
 {% endblock %}

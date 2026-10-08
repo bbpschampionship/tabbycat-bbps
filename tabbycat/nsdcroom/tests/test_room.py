@@ -205,3 +205,26 @@ class PrivateUrlLinkTests(RoomTestBase):
     def test_judge_private_url_links_to_room(self):
         resp = self.client.get(reverse('privateurls-person-index', kwargs={'tournament_slug': self.t.slug, 'url_key': self.judge.url_key}))
         self.assertContains(resp, reverse('nsdcroom-judge', kwargs={'tournament_slug': self.t.slug, 'url_key': self.judge.url_key}))
+
+
+class ProfileDisplayTests(RoomTestBase):
+
+    def test_school_batch_name_and_code_shown(self):
+        from nsdcroom.models import BatchProfile, StudentProfile
+        self.room.code = '07'
+        self.room.save()
+        BatchProfile.objects.create(institution=self.room, track='B (Grade 6-8)', time_slot='10AM-11:30AM')
+        StudentProfile.objects.create(team=self.teams[0], school='Shalom Presidency School')
+        self.judge.name = ''
+        self.judge.save()
+        public = self.client.get(reverse('nsdcroom-public-batch', kwargs={'tournament_slug': self.t.slug, 'room_id': self.room.id}))
+        for text in ('Kid 1', 'Shalom Presidency School', 'Batch A', 'Batch 07'):
+            self.assertContains(public, text)
+        judge = self.client.get(self.url())
+        self.assertContains(judge, 'Shalom Presidency School')
+        self.assertContains(judge, 'Batch A · Batch 07')
+
+    def test_find_a_student_page(self):
+        resp = self.client.get(reverse('nsdcroom-public-students', kwargs={'tournament_slug': self.t.slug}))
+        self.assertContains(resp, 'Kid 7')
+        self.assertContains(resp, 'Batch A')
