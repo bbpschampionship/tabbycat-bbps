@@ -92,7 +92,7 @@
   <div class="srow"><span class="tm">2:30 <i>PM</i></span><span class="ev">Round 3</span><span class="pl">Breakout rooms</span></div>
   <div class="srow hi"><span class="tm">6:00 <i>PM</i></span><span class="ev">Results announcement</span><span class="pl">Live on Zoom</span></div>
   <div class="sfoot">
-    <strong>Top 16 per track qualify for the in-person outrounds</strong>
+    <strong>Top {{ release.qualify_count|default:50 }} per track qualify for the in-person outrounds</strong>
     <span>Primary Gr 3–5 · Junior Gr 6–8 · Senior Gr 9–12 · All times IST · Live on Zoom</span>
   </div>
 </section>
@@ -116,7 +116,7 @@
     <div class="stp"><div><strong>Attendance</strong><span>Your batch's judge marks everyone present at the start of each round.</span></div></div>
     <div class="stp"><div><strong>Three rounds of 1v1 debate — all compulsory</strong><span>Every student must debate in all three rounds. The judge announces the pairs and each pair's motion. Round 1 is random; Rounds 2 and 3 pair speakers on similar scores.</span></div></div>
     <div class="stp"><div><strong>Scored out of 100</strong><span>Feedback is given verbally. Each speaker gets one score out of 100, and the winner of every debate always scores higher.</span></div></div>
-    <div class="stp"><div><strong>Top {{ release.qualify_count|default:16 }} in each track qualify</strong><span>Rankings by total score across the three rounds decide who goes through to the in-person outrounds. Results are announced at 6:00 PM.</span></div></div>
+    <div class="stp"><div><strong>Top {{ release.qualify_count|default:50 }} in each track qualify</strong><span>Rankings by total score across the three rounds decide who goes through to the in-person outrounds. Results are announced at 6:00 PM.</span></div></div>
   </div>
 </section>
 

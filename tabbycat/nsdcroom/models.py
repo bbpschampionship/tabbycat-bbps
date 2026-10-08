@@ -105,7 +105,7 @@ class RoundRelease(models.Model):
 class TournamentRelease(models.Model):
     tournament = models.OneToOneField('tournaments.Tournament', models.CASCADE)
     standings_released = models.BooleanField(default=False)
-    qualify_count = models.PositiveIntegerField(default=16,
+    qualify_count = models.PositiveIntegerField(default=50,
         help_text="How many top speakers qualify (highlighted on the public standings)")
     prep_minutes = models.PositiveIntegerField(default=20, help_text="Prep time after a pair's motion is released")
 
