@@ -309,3 +309,38 @@ def save_scores(pairing, raw_by_team):
     for m, v in zip(members, values):
         m.score = v
         m.save(update_fields=['score'])
+
+
+# ------------------------------------------------------------------------------
+# Tabbycat's own draw mirrors the NSDC draw (venue "Batch NN", batch judge chair)
+# ------------------------------------------------------------------------------
+
+@transaction.atomic
+def mirror_native(round, room):
+    from adjallocation.models import DebateAdjudicator
+    from draw.models import Debate, DebateTeam
+    from participants.models import Adjudicator, Team
+    from venues.models import Venue
+    t = round.tournament
+    venue, _ = Venue.objects.get_or_create(tournament=t, name=f"Batch {room.code}", defaults={'priority': 100})
+    Debate.objects.filter(round=round, venue=venue).delete()
+    judge = Adjudicator.objects.filter(tournament=t, institution=room).order_by('id').first()
+    base = int(room.code) * 100 if str(room.code).isdigit() else 9900
+    for p in pairings_for(round, room):
+        ids = [m.team_id for m in p.members]
+        if len(ids) == 1:
+            swing, _ = Team.objects.get_or_create(
+                tournament=t, reference=f"Swing (Batch {room.code})",
+                defaults={'short_reference': f"Swing {room.code}", 'type': Team.TYPE_SWING, 'use_institution_prefix': False})
+            ids.append(swing.id)
+        d = Debate.objects.create(round=round, venue=venue, room_rank=base + p.seq, bracket=0)
+        for side, team_id in enumerate(ids):
+            DebateTeam.objects.create(debate=d, team_id=team_id, side=side)
+        if judge:
+            DebateAdjudicator.objects.create(debate=d, adjudicator=judge, type=DebateAdjudicator.TYPE_CHAIR)
+
+
+def raw_scores(post, pairing):
+    """Score form → {team_id: raw}; an Absent tick counts as 0."""
+    return {m.team_id: ('0' if post.get(f'absent_{m.team_id}') else post.get(f'score_{m.team_id}'))
+            for m in pairing.members}

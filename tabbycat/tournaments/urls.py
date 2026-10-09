@@ -1,3 +1,4 @@
+from django.shortcuts import redirect
 from django.urls import include, path
 
 from . import views
@@ -7,6 +8,7 @@ urlpatterns = [
     path('',
         views.TournamentPublicHomeView.as_view(),
         name='tournament-public-index'),
+    path('admin/', lambda request, tournament_slug: redirect('nsdcroom-admin', tournament_slug=tournament_slug)),
     path('admin/',
         views.TournamentAdminHomeView.as_view(),
         name='tournament-admin-home'),
@@ -49,7 +51,12 @@ urlpatterns = [
     path('admin/participants/',     include('participants.urls_admin')),
     path('admin/printing/',         include('printing.urls_admin')),
     path('admin/privateurls/',      include('privateurls.urls_admin')),
-    path('admin/results/',          include('results.urls_admin')),
+    # NSDC: scores live in the tab director, not Tabbycat ballots
+    path('admin/results/',          lambda request, tournament_slug, **kw: redirect(
+        'nsdcroom-director-results', tournament_slug=tournament_slug)),
+    path('admin/results/<path:rest>', lambda request, tournament_slug, **kw: redirect(
+        'nsdcroom-director-results', tournament_slug=tournament_slug)),
+    path('admin/results/',          include('results.urls_admin')),  # names only (shadowed above)
     path('admin/standings/',        include('standings.urls_admin')),
     path('admin/users/',            include('users.urls_admin')),
     path('admin/venues/',           include('venues.urls_admin')),

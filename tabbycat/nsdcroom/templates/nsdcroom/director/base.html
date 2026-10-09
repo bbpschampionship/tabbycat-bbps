@@ -1,0 +1,53 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Tab director{% endblock %} · NSDC</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#1f2328;background:#f6f7f9}
+a{color:#0b57d0;text-decoration:none}a:hover{text-decoration:underline}
+header{background:#1f2328;color:#fff;position:sticky;top:0;z-index:5}
+header .in{display:flex;align-items:center;gap:4px;padding:0 16px;flex-wrap:wrap}
+header b{margin-right:14px;font-size:15px;padding:12px 0}
+header nav a{color:#c9d1d9;padding:12px 10px;display:inline-block}header nav a.on{color:#fff;border-bottom:3px solid #d4a72c}
+header .r{margin-left:auto;font-size:12px}header .r a{color:#c9d1d9}
+main{padding:16px;max-width:1500px;margin:0 auto}
+h1{font-size:20px;margin:4px 0 12px}h2{font-size:16px;margin:0 0 10px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.seg a{display:inline-block;padding:5px 11px;border:1px solid #d0d7de;background:#fff;color:#1f2328;margin-right:-1px}
+.seg a:first-child{border-radius:6px 0 0 6px}.seg a:last-child{border-radius:0 6px 6px 0}.seg a.on{background:#1f2328;color:#fff;border-color:#1f2328}
+.box{background:#fff;border:1px solid #d0d7de;border-radius:8px;padding:14px;margin-bottom:14px}
+table{width:100%;border-collapse:collapse;background:#fff}
+th,td{padding:7px 8px;border-bottom:1px solid #eaeef2;text-align:left;vertical-align:middle}
+th{font-size:12px;color:#57606a;background:#f6f8fa;position:sticky;top:44px}
+tr:hover td{background:#fafbfc}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.b{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;background:#eaeef2;color:#57606a;white-space:nowrap}
+.b.ok{background:#dafbe1;color:#116329}.b.live{background:#fff8c5;color:#7d4e00}.b.bad{background:#ffebe9;color:#a40e26}.b.blue{background:#ddf4ff;color:#0550ae}
+button,.btn{font:inherit;padding:5px 12px;border:1px solid #1f883d;background:#1f883d;color:#fff;border-radius:6px;cursor:pointer;white-space:nowrap}
+button.sec,.btn.sec{background:#f6f8fa;color:#1f2328;border-color:#d0d7de}button.warn{background:#cf222e;border-color:#cf222e}
+button:disabled{opacity:.5;cursor:default}
+input,select{font:inherit;padding:4px 6px;border:1px solid #d0d7de;border-radius:6px;background:#fff}
+input[type=number]{width:70px}select{max-width:100%}
+.msg{padding:9px 12px;border-radius:6px;margin-bottom:10px}.msg.success{background:#dafbe1}.msg.error{background:#ffebe9}.msg.warning{background:#fff8c5}
+.muted{color:#57606a}.small{font-size:12px}.win{font-weight:700;color:#116329}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.stat{background:#fff;border:1px solid #d0d7de;border-radius:8px;padding:8px 14px}.stat b{font-size:20px;display:block}
+.cut td{border-bottom:3px solid #d4a72c}
+.copy{font-size:12px}
+</style></head><body>
+<header><div class="in"><b>NSDC Tab Director</b><nav>
+{% with s=section t=tournament.slug %}
+<a class="{% if s == 'overview' %}on{% endif %}" href="{% url 'nsdcroom-admin' tournament_slug=t %}{% if round %}?round={{ round.seq }}{% endif %}">Overview</a>
+<a class="{% if s == 'results' %}on{% endif %}" href="{% url 'nsdcroom-director-results' tournament_slug=t %}{% if round %}?round={{ round.seq }}{% endif %}">Results</a>
+<a class="{% if s == 'standings' %}on{% endif %}" href="{% url 'nsdcroom-director-standings' tournament_slug=t %}">Standings</a>
+<a class="{% if s == 'judges' %}on{% endif %}" href="{% url 'nsdcroom-director-judges' tournament_slug=t %}">Judges</a>
+<a class="{% if s == 'messages' %}on{% endif %}" href="{% url 'nsdcroom-director-messages' tournament_slug=t %}">Messages</a>
+<a class="{% if s == 'settings' %}on{% endif %}" href="{% url 'nsdcroom-director-settings' tournament_slug=t %}">Settings</a>
+{% endwith %}</nav>
+<span class="r"><a href="{% url 'nsdcroom-public-batches' tournament_slug=tournament.slug %}" target="_blank">Public site ↗</a> · <a href="/{{ tournament.slug }}/admin/draw/round/{{ round.seq|default:1 }}/">Tabbycat draw</a></span></div></header>
+<main>
+{% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}
+{% block content %}{% endblock %}
+</main>
+<script>
+document.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(e){e.preventDefault();navigator.clipboard.writeText(b.dataset.copy);var t=b.textContent;b.textContent='Copied';setTimeout(function(){b.textContent=t},1200)})});
+document.querySelectorAll('.js-absent').forEach(function(cb){function f(){var i=document.getElementById(cb.dataset.for);i.disabled=cb.checked;if(cb.checked)i.value=''}cb.addEventListener('change',f)});
+</script>
+</body></html>

@@ -1,0 +1,25 @@
+{% extends "nsdcroom/director/base.html" %}{% block title %}Overview{% endblock %}
+{% block content %}
+<h1>Overview · {{ round.name }} {% if released %}<span class="b ok">results public</span>{% else %}<span class="b">results hidden</span>{% endif %}</h1>
+{% include "nsdcroom/director/_filters.html" %}
+<div class="stats">
+  <div class="stat"><b>{{ rows|length }}</b>batches</div>
+  <div class="stat"><b>{{ totals.pairs }}</b>pairs</div>
+  <div class="stat"><b>{{ totals.released }}</b>motions released</div>
+  <div class="stat"><b>{{ totals.scored }}</b>pairs scored</div>
+  <div class="stat"><b>{{ totals.absent }}</b>absent</div>
+</div>
+<table>
+<thead><tr><th>Batch</th><th>Judge</th><th>POC</th><th class="num">Speakers</th><th class="num">Pairs</th><th class="num">Motions out</th><th class="num">Scored</th><th class="num">Absent</th><th>Status</th><th></th></tr></thead>
+<tbody>
+{% for r in rows %}<tr>
+  <td><a href="{% url 'nsdcroom-director-batch' tournament_slug=tournament.slug room_id=r.room.id %}?round={{ round.seq }}"><b>{{ r.room.code }}</b> · {{ r.label }}</a><div class="small muted">{{ r.profile.grades_label|default:"" }}</div></td>
+  <td>{% for x in r.judges %}{{ x.j.name }} <a href="{{ x.url }}" target="_blank" class="small">room ↗</a> <a href="#" class="copy" data-copy="{{ x.url }}">copy</a>{% if x.j.phone %}<div class="small muted">{{ x.j.phone }}</div>{% endif %}{% empty %}<span class="b bad">no judge</span>{% endfor %}</td>
+  <td>{{ r.profile.poc_name|default:"—" }}<div class="small muted">{{ r.profile.poc_phone }}</div></td>
+  <td class="num">{{ r.count }}</td><td class="num">{{ r.pairs }}</td><td class="num">{{ r.out }}</td>
+  <td class="num">{{ r.scored }}/{{ r.pairs }}</td><td class="num">{% if r.absent %}<span class="b bad">{{ r.absent }}</span>{% else %}0{% endif %}</td>
+  <td>{% if r.status == 'done' %}<span class="b ok">all scored</span>{% elif r.status == 'live' %}<span class="b live">in progress</span>{% else %}<span class="b">not started</span>{% endif %}</td>
+  <td><a class="btn sec" href="{% url 'nsdcroom-director-batch' tournament_slug=tournament.slug room_id=r.room.id %}?round={{ round.seq }}">Open</a></td>
+</tr>{% endfor %}
+</tbody></table>
+{% endblock %}

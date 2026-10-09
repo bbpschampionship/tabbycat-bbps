@@ -1,0 +1,19 @@
+{% extends "nsdcroom/director/base.html" %}{% block title %}Messages{% endblock %}
+{% block content %}
+<h1>Messages log <span class="muted small">WhatsApp + email sent when a motion is released</span></h1>
+<div class="bar"><span class="seg">
+  <a class="{% if not status %}on{% endif %}" href="?">All</a>
+  <a class="{% if status == 'sent' %}on{% endif %}" href="?status=sent">Sent ({{ counts.sent }})</a>
+  <a class="{% if status == 'failed' %}on{% endif %}" href="?status=failed">Failed ({{ counts.failed }})</a>
+  <a class="{% if status == 'skipped' %}on{% endif %}" href="?status=skipped">Skipped ({{ counts.skipped }})</a></span></div>
+<table>
+<thead><tr><th>Time (IST)</th><th>Round</th><th>Batch · pair</th><th>Student</th><th>Channel</th><th>To</th><th>Status</th><th>Detail</th></tr></thead>
+<tbody>
+{% for n in rows %}<tr><td>{{ n.when }}</td><td>{{ n.pairing.round.name }}</td>
+  <td><a href="{% url 'nsdcroom-director-batch' tournament_slug=tournament.slug room_id=n.pairing.room_id %}?round={{ n.pairing.round.seq }}#p{{ n.pairing.seq }}">{{ n.pairing.room.code }} · P{{ n.pairing.seq }}</a></td>
+  <td>{{ n.name }}</td><td>{{ n.channel }}</td><td class="small">{{ n.destination }}</td>
+  <td><span class="b {% if n.status == 'sent' %}ok{% elif n.status == 'failed' %}bad{% endif %}">{{ n.status }}</span></td>
+  <td class="small muted">{{ n.detail|truncatechars:80 }}</td></tr>
+{% empty %}<tr><td colspan="8" class="muted">Nothing sent yet.</td></tr>{% endfor %}
+</tbody></table>
+{% endblock %}

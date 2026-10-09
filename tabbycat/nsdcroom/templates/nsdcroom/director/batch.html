@@ -1,0 +1,76 @@
+{% extends "nsdcroom/director/base.html" %}{% block title %}Batch {{ room.code }}{% endblock %}
+{% block content %}
+<p class="small"><a href="{% url 'nsdcroom-admin' tournament_slug=tournament.slug %}?round={{ round.seq }}">← Overview</a></p>
+<h1>Batch {{ room.code }} · {{ label }} <span class="muted small">{{ profile.grades_label|default:"" }} · {{ speakers|length }} speakers</span>
+  {% if released %}<span class="b ok">{{ round.name }} results public</span>{% endif %}</h1>
+{% include "nsdcroom/director/_filters.html" with tracks=None %}
+
+<div class="box">
+  <h2>Judge &amp; POC</h2>
+  <div class="bar">
+    {% for x in judges %}<span><b>{{ x.j.name }}</b> {{ x.j.phone }} · <a href="{{ x.url }}" target="_blank">judge room ↗</a> · <a href="#" class="copy" data-copy="{{ x.url }}">copy link</a></span>{% empty %}<span class="b bad">No judge assigned</span>{% endfor %}
+    <form method="post" class="bar" style="margin:0 0 0 auto">{% csrf_token %}<input type="hidden" name="round" value="{{ round.seq }}"><input type="hidden" name="action" value="set_judge">
+      <select name="judge">{% for j in all_judges %}<option value="{{ j.id }}">{{ j.name }}{% if j.institution_id %} (Batch {{ j.institution.code }}){% else %} (backup){% endif %}</option>{% endfor %}</select>
+      <button class="sec">Make judge of this batch</button></form>
+  </div>
+  <div class="muted">POC: {{ profile.poc_name|default:"—" }} {{ profile.poc_phone }}</div>
+</div>
+
+<div class="box">
+  <h2>{{ round.name }} draw, motions &amp; scores</h2>
+  <p class="muted small">Score out of {{ max_score }}, whole numbers, no ties (the winner scores higher). Tick Absent if a student didn't turn up. "Save" stores scores; "Release" starts the {{ release.prep_minutes }}-min prep clock and messages both students.</p>
+  <table>
+  <thead><tr><th>#</th><th>For</th><th>Against</th><th style="width:34%">Motion</th><th>Messages</th></tr></thead>
+  <tbody>
+  {% for p in pairings %}
+  <tr id="p{{ p.seq }}">
+    <td><b>{{ p.seq }}</b></td>
+    {% with a=p.members.0 b=p.members.1 %}
+    <td colspan="2">
+      <form method="post" class="bar" style="margin:0">{% csrf_token %}<input type="hidden" name="round" value="{{ round.seq }}"><input type="hidden" name="pairing" value="{{ p.id }}"><input type="hidden" name="action" value="score">
+        {% for m in p.members %}
+        <span style="min-width:45%;display:inline-flex;gap:6px;align-items:center">
+          <span class="{% if p.winner and p.winner.team_id == m.team_id %}win{% endif %}">{{ m.name }}{% if p.winner and p.winner.team_id == m.team_id %} ★{% endif %}</span>
+          <input type="number" id="s{{ m.id }}" name="score_{{ m.team_id }}" min="0" max="{{ max_score }}" step="1" value="{% if m.score %}{{ m.score }}{% endif %}" {% if m.score == 0 %}disabled{% endif %}>
+          <label class="small"><input type="checkbox" class="js-absent" data-for="s{{ m.id }}" name="absent_{{ m.team_id }}" value="1" {% if m.score == 0 %}checked{% endif %}> Absent</label>
+        </span>
+        {% endfor %}
+        {% if p.is_swing %}<span class="muted small">no opponent (solo speech)</span>{% endif %}
+        <button>Save</button>
+        {% if not p.is_swing %}<button class="sec" name="action" value="swap">Swap sides</button>{% endif %}
+      </form>
+    </td>
+    {% endwith %}
+    <td>
+      <form method="post" class="bar" style="margin:0">{% csrf_token %}<input type="hidden" name="round" value="{{ round.seq }}"><input type="hidden" name="pairing" value="{{ p.id }}">
+        <select name="motion" style="width:100%"><option value="">— motion —</option>{% for mo in motions %}<option value="{{ mo.id }}" {% if p.motion_id == mo.id %}selected{% endif %}>{{ mo.text|truncatechars:90 }}</option>{% endfor %}</select>
+        <button name="action" value="motion" class="sec">Save</button>
+        <button name="action" value="release">{% if p.is_released %}Re-release{% else %}Release{% endif %}</button>
+        {% if p.is_released %}<span class="b ok">prep ends {{ p.prep_end_ist }}</span>{% endif %}
+      </form>
+    </td>
+    <td class="small">{% for m in p.members %}<div>{{ m.name|truncatechars:14 }}: WA {% if m.wa %}<span class="b {% if m.wa.status == 'sent' %}ok{% elif m.wa.status == 'failed' %}bad{% endif %}" title="{{ m.wa.detail }}">{{ m.wa.status }}</span>{% else %}—{% endif %} · Mail {% if m.em %}<span class="b {% if m.em.status == 'sent' %}ok{% elif m.em.status == 'failed' %}bad{% endif %}" title="{{ m.em.detail }}">{{ m.em.status }}</span>{% else %}—{% endif %}</div>{% endfor %}</td>
+  </tr>
+  {% empty %}<tr><td colspan="5" class="muted">No draw for this round.</td></tr>{% endfor %}
+  </tbody></table>
+</div>
+
+<details class="box" id="draw">
+  <summary><b>Edit the draw by hand</b> <span class="muted small">(move students between pairs, change sides, leave someone out)</span></summary>
+  <form method="post" style="margin-top:10px">{% csrf_token %}<input type="hidden" name="round" value="{{ round.seq }}"><input type="hidden" name="action" value="edit_draw">
+  <table><thead><tr><th>Student</th><th>School</th><th>Pair</th><th>Side</th></tr></thead><tbody>
+  {% for s in speakers %}<tr><td>{{ s.name }}</td><td class="muted">{{ s.school }}</td>
+    <td><select name="pair_{{ s.team.id }}"><option value="">— not debating</option>{% for n in pair_choices %}<option value="{{ n }}" {% if s.pair == n %}selected{% endif %}>Pair {{ n }}</option>{% endfor %}</select></td>
+    <td><select name="side_{{ s.team.id }}"><option value="1" {% if s.side == 1 %}selected{% endif %}>For</option><option value="2" {% if s.side == 2 %}selected{% endif %}>Against</option></select></td></tr>{% endfor %}
+  </tbody></table>
+  <p class="muted small">Each pair needs one For and one Against; a student alone in a pair must be For. Pairs whose line-up changes lose their scores. Pairs are renumbered in order.</p>
+  <button>Save draw</button></form>
+</details>
+
+<div class="box">
+  <h2>Batch standings after {{ round.name }}</h2>
+  <table><thead><tr><th>#</th><th>Student</th><th>School</th><th class="num">Wins</th><th class="num">Total</th></tr></thead><tbody>
+  {% for r in standings %}<tr><td>{{ r.rank }}</td><td>{{ r.name }}</td><td class="muted">{{ r.school }}</td><td class="num">{{ r.wins }}</td><td class="num"><b>{{ r.total }}</b></td></tr>{% endfor %}
+  </tbody></table>
+</div>
+{% endblock %}

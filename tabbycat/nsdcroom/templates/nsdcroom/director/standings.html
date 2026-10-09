@@ -1,0 +1,22 @@
+{% extends "nsdcroom/director/base.html" %}{% block title %}Standings{% endblock %}
+{% block content %}
+<h1>Standings · speakers {% if release.standings_released %}<span class="b ok">public</span>{% else %}<span class="b">hidden from public</span>{% endif %}</h1>
+<div class="bar">
+  {% include "nsdcroom/director/_filters.html" with hide_rounds=1 no_all_tracks=1 %}
+  <a class="btn sec" href="?track={{ track }}&format=csv">Download CSV</a>
+  <span class="muted">Top {{ release.qualify_count }} qualify (gold line). Ranked by total, then wins.</span>
+  <form method="post" style="margin-left:auto">{% csrf_token %}
+    {% if release.standings_released %}<button class="warn" name="action" value="hide_standings">Hide final rankings</button>
+    {% else %}<button name="action" value="release_standings" onclick="return confirm('Publish final rankings and the qualified list?')">Release final rankings</button>{% endif %}</form>
+</div>
+<table>
+<thead><tr><th class="num">Rank</th><th>Student</th><th>School</th><th>Batch</th>{% for n in round_names %}<th class="num">{{ n }}</th>{% endfor %}<th class="num">Total</th><th class="num">Wins</th><th></th></tr></thead>
+<tbody>
+{% for r in rows %}<tr class="{% if forloop.counter == release.qualify_count %}cut{% endif %}">
+  <td class="num">{{ r.rank }}</td><td>{{ r.name }}</td><td class="muted">{{ r.school }}</td><td class="small">{{ r.batch }}</td>
+  {% for s in r.scores %}<td class="num">{% if s == 0 %}<span class="b bad">Abs</span>{% elif s is None %}<span class="muted">—</span>{% else %}{{ s }}{% endif %}</td>{% endfor %}
+  <td class="num"><b>{{ r.total }}</b></td><td class="num">{{ r.wins }}</td>
+  <td>{% if r.rank <= release.qualify_count %}<span class="b ok">Q</span>{% endif %}</td>
+</tr>{% endfor %}
+</tbody></table>
+{% endblock %}

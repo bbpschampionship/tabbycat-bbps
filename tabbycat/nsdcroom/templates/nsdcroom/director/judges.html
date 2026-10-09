@@ -1,0 +1,18 @@
+{% extends "nsdcroom/director/base.html" %}{% block title %}Judges{% endblock %}
+{% block content %}
+<h1>Judges</h1>
+{% if uncovered %}<div class="msg error">Batches with no judge: {% for r in uncovered %}<b>{{ r.code }}</b>{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}
+<table>
+<thead><tr><th>Judge</th><th>Phone</th><th>Batch</th><th>Private judge link</th><th>Move to</th></tr></thead>
+<tbody>
+{% for x in rows %}<tr>
+  <td><b>{{ x.j.name|default:"(no name)" }}</b></td><td>{{ x.j.phone }}</td>
+  <td>{% if x.j.institution %}<a href="{% url 'nsdcroom-director-batch' tournament_slug=tournament.slug room_id=x.j.institution.id %}">{{ x.j.institution.code }} · {{ x.batch }}</a>{% else %}<span class="b blue">backup</span>{% endif %}</td>
+  <td class="small"><a href="{{ x.url }}" target="_blank">{{ x.url }}</a> <a href="#" class="copy" data-copy="{{ x.url }}">copy</a></td>
+  <td><form method="post" class="bar" style="margin:0">{% csrf_token %}<input type="hidden" name="judge" value="{{ x.j.id }}">
+    <select name="room"><option value="">— backup (no batch)</option>{% for r in all_rooms %}<option value="{{ r.id }}" {% if x.j.institution_id == r.id %}selected{% endif %}>Batch {{ r.code }}</option>{% endfor %}</select>
+    <button class="sec">Save</button></form></td>
+</tr>{% endfor %}
+</tbody></table>
+<p class="muted small">A judge's private link never changes; moving them just changes which batch it opens. A batch can have more than one judge.</p>
+{% endblock %}

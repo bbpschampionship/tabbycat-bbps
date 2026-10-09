@@ -1,0 +1,5 @@
+<div class="bar">
+  {% if rounds and not hide_rounds %}<span class="seg">{% for r in rounds %}<a class="{% if r == round %}on{% endif %}" href="?round={{ r.seq }}{% if track %}&track={{ track }}{% endif %}{{ extra_q }}">{{ r.name }}</a>{% endfor %}</span>{% endif %}
+  {% if tracks %}<span class="seg">{% if not no_all_tracks %}<a class="{% if not track %}on{% endif %}" href="?round={{ round.seq }}{{ extra_q }}">All tracks</a>{% endif %}{% for t in tracks %}<a class="{% if track == t.letter %}on{% endif %}" href="?round={{ round.seq }}&track={{ t.letter }}{{ extra_q }}">{{ t.name }}</a>{% endfor %}</span>{% endif %}
+  {{ more }}
+</div>
