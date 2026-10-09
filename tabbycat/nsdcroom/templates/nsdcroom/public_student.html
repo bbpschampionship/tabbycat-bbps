@@ -1,0 +1,13 @@
+{% extends "nsdcroom/base.html" %}{% load nsdc_tags %}
+{% block title %}{{ name }}{% endblock %}
+{% block heading %}{{ name }}{% endblock %}
+{% block meta %}<div class="meta">{{ school }} · <a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=room.id %}">{{ room|batchname }}</a></div>{% endblock %}
+{% block content %}
+{% for block in blocks %}
+<section class="card">
+  <h2 style="margin-top:0">{{ block.round.name }}</h2>
+  {% include "nsdcroom/_pairings_compact.html" %}
+</section>
+{% endfor %}
+<p><a href="{% url 'nsdcroom-public-students' tournament_slug=tournament.slug %}">← All participants</a></p>
+{% endblock %}

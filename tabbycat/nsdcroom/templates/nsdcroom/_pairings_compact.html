@@ -1,11 +1,20 @@
-{% for p in block.pairings %}
-  <div class="cpair">
-    <div class="cp-n">{{ p.seq }}</div>
-    <div class="grow">
-      <div class="cp-names">{% for m in p.members %}{% if not forloop.first %}<span class="cp-vs">vs</span>{% endif %}<span class="{% if block.released and p.winner.team_id == m.team_id %}winner{% endif %}">{{ m.name }} <small class="muted">({{ m.side_label }})</small>{% if block.released and m.score is not None %} <b class="cp-sc">{{ m.score }}</b>{% endif %}{% if block.released and p.winner.team_id == m.team_id %}<span class="crown">★</span>{% endif %}</span>{% endfor %}{% if p.is_swing %}<span class="cp-vs">vs</span><span>Swing</span>{% endif %}</div>
-      {% if p.is_released and p.motion %}<div class="cp-motion">{{ p.motion.text }}</div><div class="muted" style="font-size:12px">Prep ends {{ p.prep_end_ist }}</div>{% elif not block.released %}<div class="muted" style="font-size:12px">Motion coming soon</div>{% endif %}
-    </div>
-  </div>
-{% empty %}
-  <p class="muted" style="font-family:var(--serif);font-style:italic;font-size:16px;margin:0">The draw will appear here once the judge generates it.</p>
-{% endfor %}
+{% if block.pairings %}
+<table class="dtab">
+  <thead><tr><th class="dn">#</th><th>For</th><th class="dvs"></th><th>Against</th></tr></thead>
+  <tbody>
+  {% for p in block.pairings %}
+    <tr>
+      <td class="dn"><span class="cp-n">{{ p.seq }}</span></td>
+      {% for m in p.members %}{% if not forloop.first %}<td class="dvs">vs</td>{% endif %}
+      <td class="{% if block.released and p.winner.team_id == m.team_id %}winner{% endif %}"><a class="sname{% if m.team_id == team_id %} me{% endif %}" href="{% url 'nsdcroom-public-student' tournament_slug=tournament.slug team_id=m.team_id %}">{{ m.name }}</a>{% if block.released and m.score is not None %} <b class="cp-sc">{{ m.score }}</b>{% endif %}{% if block.released and p.winner.team_id == m.team_id %}<span class="crown">★</span>{% endif %}</td>
+      {% endfor %}
+      {% if p.is_swing %}<td class="dvs">–</td><td class="muted solo">No opponent · automatic win</td>{% endif %}
+    </tr>
+    {% if p.is_released and p.motion %}<tr class="dmo"><td></td><td colspan="3"><div class="cp-motion">{{ p.motion.text }}</div><div class="muted" style="font-size:12px">Prep ends {{ p.prep_end_ist }}</div></td></tr>
+    {% elif not block.released %}<tr class="dmo"><td></td><td colspan="3" class="muted" style="font-size:12px">Motion coming soon</td></tr>{% endif %}
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  <p class="muted" style="font-family:var(--serif);font-style:italic;font-size:16px;margin:0">The draw will appear here soon.</p>
+{% endif %}

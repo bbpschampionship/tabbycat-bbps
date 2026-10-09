@@ -36,14 +36,15 @@
   <p class="muted">{% if round.seq == 1 %}Round 1 pairs present speakers at random.{% else %}Pairs speakers with similar scores so far, avoiding repeat opponents.{% endif %}
     With an odd number, one speaker debates the <strong>Swing</strong>: they take For and win automatically, but still give their speech for a score.
     The draw (pairs and sides) shows on the public page as soon as it is generated.</p>
+  {% if pairings %}<p class="muted"><strong>The draw is already set.</strong> Use “Change the draw by hand” below for late arrivals, leavers or odd numbers.</p>{% else %}
   <form method="post" class="row">{% csrf_token %}
     <input type="hidden" name="action" value="generate"><input type="hidden" name="round" value="{{ round.seq }}">
     {% if any_scores %}<label class="row muted"><input type="checkbox" name="confirm" value="yes"> Throw away entered scores and re-draw</label>{% endif %}
-    <button type="submit" {% if locked or not present_count %}disabled{% endif %}>{% if pairings %}Re-generate draw{% else %}Generate draw{% endif %}</button>
-  </form>
+    <button type="submit" {% if locked or not present_count %}disabled{% endif %}>Generate draw</button>
+  </form>{% endif %}
 
   {% if unplaced_present %}<div class="msg warning" style="margin-top:12px">Present but not in the draw: {% for s in unplaced_present %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}. Add them below.</div>{% endif %}
-  {% if placed_absent %}<div class="msg warning" style="margin-top:12px">In the draw but marked absent: {% for s in placed_absent %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}. Remove them below or re-generate.</div>{% endif %}
+  {% if placed_absent %}<div class="msg warning" style="margin-top:12px">In the draw but marked absent: {% for s in placed_absent %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}. Remove them below.</div>{% endif %}
 
   {% if pairings %}
   <details style="margin-top:14px" {% if unplaced_present or placed_absent %}open{% endif %}>

@@ -230,7 +230,7 @@ class PublicHomeView(TournamentView):
     SLOT_ORDER = {'AM': 0, 'PM': 1}
 
     def get(self, request, *args, **kwargs):
-        teams = list(self.tournament.team_set.select_related('institution__nsdc_batch', 'nsdc_student')
+        teams = list(self.tournament.team_set.exclude(type='S').select_related('institution__nsdc_batch', 'nsdc_student')
                      .prefetch_related('speaker_set'))
         students = sorted(({'name': logic.team_name(t), 'school': logic.team_school(t), 'room': t.institution,
                             'profile': getattr(t.institution, 'nsdc_batch', None) if t.institution else None}
@@ -295,7 +295,10 @@ class PublicBatchesView(TournamentView):
         return render(request, 'nsdcroom/public_batch_list.html', {
             'tournament': self.tournament, 'rounds': rounds, 'round': round, 'rooms': rooms, 'mode': self.mode,
             'nav': self.mode, 'released': released,
-            'tracks': [{'track': k, **logic.split_track(k), 'rooms': v} for k, v in sorted(tracks.items())],
+            'tracks': [{'track': k, **logic.split_track(k), 'rooms': v} for k, v in sorted(tracks.items())
+                       if not request.GET.get('track') or logic.split_track(k)['letter'] == request.GET.get('track')],
+            'all_tracks': [{'track': k, **logic.split_track(k)} for k in sorted(tracks)],
+            'track_sel': request.GET.get('track', ''),
             'student_count': sum(r['count'] for r in rooms)})
 
 
@@ -332,12 +335,27 @@ class PublicBatchView(TournamentView):
             'standings': standings if any(r['debated'] for r in standings) else []})
 
 
+class PublicStudentView(TournamentView):
+    """One student's draw for every round."""
+
+    def get(self, request, *args, **kwargs):
+        team = get_object_or_404(self.tournament.team_set.exclude(type='S').select_related('institution'), id=kwargs['team_id'])
+        room = team.institution
+        rounds = self.rounds()
+        blocks = _public_round_blocks(self.tournament, room, rounds, logic.room_teams(self.tournament, room))
+        for b in blocks:
+            b['pairings'] = [p for p in b['pairings'] if any(m.team_id == team.id for m in p.members)]
+        return render(request, 'nsdcroom/public_student.html', {
+            'tournament': self.tournament, 'room': room, 'blocks': blocks, 'nav': 'participants',
+            'name': logic.team_name(team), 'school': logic.team_school(team), 'team_id': team.id})
+
+
 class PublicStudentsView(TournamentView):
 
     def get(self, request, *args, **kwargs):
-        teams = (self.tournament.team_set.select_related('institution__nsdc_batch', 'nsdc_student')
+        teams = (self.tournament.team_set.exclude(type='S').select_related('institution__nsdc_batch', 'nsdc_student')
                  .prefetch_related('speaker_set'))
-        students = sorted(({'name': logic.team_name(t), 'school': logic.team_school(t), 'room': t.institution}
+        students = sorted(({'id': t.id, 'name': logic.team_name(t), 'school': logic.team_school(t), 'room': t.institution}
                            for t in teams), key=lambda s: s['name'].lower())
         return render(request, 'nsdcroom/public_students.html', {'tournament': self.tournament, 'students': students,
                                                                  'nav': 'participants'})
@@ -349,7 +367,7 @@ class PublicStandingsView(TournamentView):
         release = TournamentRelease.objects.filter(tournament=self.tournament).first()
         tracks = []
         if release and release.standings_released:
-            teams = list(self.tournament.team_set.select_related('institution__nsdc_batch', 'nsdc_student')
+            teams = list(self.tournament.team_set.exclude(type='S').select_related('institution__nsdc_batch', 'nsdc_student')
                          .prefetch_related('speaker_set'))
             by_track = {}
             for t in teams:

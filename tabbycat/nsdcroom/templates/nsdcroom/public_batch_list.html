@@ -5,7 +5,13 @@
 {% block content %}
 {% if mode != 'batches' %}
 <nav class="tabs left">
-  {% for r in rounds %}<a href="?round={{ r.seq }}" class="{% if r == round %}on{% endif %}">{{ r.name }}</a>{% endfor %}
+  {% for r in rounds %}<a href="?round={{ r.seq }}{% if track_sel %}&track={{ track_sel }}{% endif %}" class="{% if r == round %}on{% endif %}">{{ r.name }}</a>{% endfor %}
+</nav>
+{% endif %}
+{% if all_tracks|length > 1 %}
+<nav class="tabs left">
+  <a href="?round={{ round.seq }}" class="{% if not track_sel %}on{% endif %}">All tracks</a>
+  {% for tr in all_tracks %}<a href="?round={{ round.seq }}&track={{ tr.letter }}" class="{% if track_sel == tr.letter %}on{% endif %}">{{ tr.name }} <small>{{ tr.grades }}</small></a>{% endfor %}
 </nav>
 {% endif %}
 
@@ -22,7 +28,7 @@
       <span class="code">{{ row.room.code }}</span>
       <div class="grow">
         <a href="{% url 'nsdcroom-public-batch' tournament_slug=tournament.slug room_id=row.room.id %}" style="text-decoration:none">
-          <strong style="font-size:18px;color:var(--ink-strong)">{{ row.room|batchname }}</strong></a>
+          <strong class="btitle">{{ row.room|batchname }}</strong></a>
         <div class="muted">{% if row.profile %}{{ row.profile.grades_label }}{% endif %} · {{ row.count }} speakers</div>
       </div>
       {% if mode == 'rounds' and row.block.announced %}<span class="pill gold">Draw live</span>{% endif %}

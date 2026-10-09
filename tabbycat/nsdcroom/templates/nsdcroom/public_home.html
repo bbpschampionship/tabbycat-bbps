@@ -64,7 +64,7 @@
   .live i{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 4px rgba(47,107,58,.15)}
 </style>
 
-{% if draw_live %}<a class="live" href="{% url 'nsdcroom-public-rounds' tournament_slug=tournament.slug %}?round={{ round.seq }}" style="text-decoration:none"><i></i>{{ round.name }} draw is live — see the pairs</a>{% endif %}
+{% if draw_live %}<a class="live" href="{% url 'nsdcroom-public-rounds' tournament_slug=tournament.slug %}?round={{ round.seq }}" style="text-decoration:none"><i></i>All draws are live (Rounds 1–3) — see the pairs</a>{% endif %}
 
 <section class="card finder">
   <h2>Find your child's batch</h2>

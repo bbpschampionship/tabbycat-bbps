@@ -10,7 +10,7 @@
           {% if m.school %}<div class="muted">{{ m.school }}</div>{% endif %}</div>
           {% if block.released and m.score is not None %}<span class="num" style="font-size:24px">{{ m.score }}</span>{% endif %}</div>
       {% endfor %}
-      {% if p.is_swing %}<div class="vsmark">vs</div><div class="row"><div class="grow"><div class="side">Against</div><strong>Swing</strong><div class="muted">Odd number in the batch — automatic win, speech still scored</div></div></div>{% endif %}
+      {% if p.is_swing %}<div class="vsmark">vs</div><div class="row"><div class="grow"><div class="side">Against</div><strong>No opponent</strong><div class="muted">Automatic win, speech still scored</div></div></div>{% endif %}
     </div>
     {% if p.is_released and p.motion %}<div class="motion"><span class="lbl">Motion</span>{{ p.motion.text }}</div>{% endif %}
   </div>
