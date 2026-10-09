@@ -16,7 +16,7 @@
   <td class="num">{{ r.rank }}</td><td>{{ r.name }}</td><td class="muted">{{ r.school }}</td><td class="small">{{ r.batch }}</td>
   {% for s in r.scores %}<td class="num">{% if s == 0 %}<span class="b bad">Abs</span>{% elif s is None %}<span class="muted">—</span>{% else %}{{ s }}{% endif %}</td>{% endfor %}
   <td class="num"><b>{{ r.total }}</b></td><td class="num">{{ r.wins }}</td>
-  <td>{% if r.rank <= release.qualify_count %}<span class="b ok">Q</span>{% endif %}</td>
+  <td>{% if r.debated and r.rank <= release.qualify_count %}<span class="b ok">Q</span>{% endif %}</td>
 </tr>{% endfor %}
 </tbody></table>
 {% endblock %}

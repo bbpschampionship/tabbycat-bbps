@@ -263,7 +263,7 @@ class StandingsView(DirectorView):
             for r in rows:
                 w.writerow([r['rank'], r['name'], r['school'], r['batch']]
                            + [('Absent' if s == 0 else s if s is not None else '') for s in r['scores']]
-                           + [r['total'], r['wins'], 'Yes' if r['rank'] <= c['release'].qualify_count else ''])
+                           + [r['total'], r['wins'], 'Yes' if r['debated'] and r['rank'] <= c['release'].qualify_count else ''])
             return resp
         c.update(track=track, rows=rows, round_names=[r.name for r in rounds])
         return render(request, 'nsdcroom/director/standings.html', c)
