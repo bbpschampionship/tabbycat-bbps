@@ -37,6 +37,7 @@
         {% endfor %}
         {% if p.is_swing %}<span class="muted small">no opponent (solo speech)</span>{% endif %}
         <button>Save</button>
+        {% if p.is_scored or p.members.0.score is not None or p.members.1.score is not None %}<button class="warn" name="action" value="clear_score" formnovalidate onclick="return confirm('Delete the scores for Pair {{ p.seq }}?')">Delete scores</button>{% endif %}
         {% if not p.is_swing %}<button class="sec" name="action" value="swap" onclick="return confirm('Swap For and Against for Pair {{ p.seq }}? Any scores stay with each student.')">Swap sides</button>{% endif %}
       </form>
     </td>

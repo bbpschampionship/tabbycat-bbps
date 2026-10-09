@@ -138,12 +138,17 @@ class BatchView(DirectorView):
         action = request.POST.get('action')
         anchor = ''
         try:
-            if action in ('score', 'release', 'swap', 'motion'):
+            if action in ('score', 'clear_score', 'release', 'swap', 'motion'):
                 pairing = get_object_or_404(Pairing, id=request.POST.get('pairing'), round=round, room=room)
                 anchor = f"p{pairing.seq}"
                 if action == 'score':
                     logic.save_scores(pairing, logic.raw_scores(request.POST, pairing))
                     messages.success(request, f"Pair {pairing.seq} scores saved.")
+                elif action == 'clear_score':
+                    for m in pairing.members:
+                        m.score = None
+                        m.save(update_fields=['score'])
+                    messages.success(request, f"Pair {pairing.seq} scores deleted.")
                 elif action == 'swap':
                     members = pairing.members
                     if len(members) != 2:
