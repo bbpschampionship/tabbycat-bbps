@@ -8,7 +8,7 @@ from django.db import transaction
 
 from adjallocation.models import DebateAdjudicator
 from draw.models import Debate, DebateTeam
-from participants.models import Adjudicator
+from participants.models import Adjudicator, Team
 from tournaments.models import Round, Tournament
 from venues.models import Venue
 
@@ -21,6 +21,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--tournament', default='nsdc-qualifiers')
         parser.add_argument('--seed', type=int, default=2026)
+        parser.add_argument('--mirror-only', action='store_true',
+                            help="Keep the existing NSDC draws; only rebuild Tabbycat's draw from them")
 
     @transaction.atomic
     def handle(self, *args, **opts):
@@ -44,12 +46,19 @@ class Command(BaseCommand):
             rank = 0
             for room in rooms:
                 team_ids = [tm.id for tm in logic.room_teams(t, room)]
-                groups = logic.build_groups(r, room, team_ids, rng=rng)
-                logic.replace_draw(r, room, groups)
+                if opts['mirror_only']:
+                    groups = [[m.team_id for m in p.members] for p in logic.pairings_for(r, room)]
+                else:
+                    groups = logic.build_groups(r, room, team_ids, rng=rng)
+                    logic.replace_draw(r, room, groups)
                 judges = list(Adjudicator.objects.filter(tournament=t, institution=room))
                 for group in groups:
-                    if len(group) < 2:  # swing: shown on the NSDC batch pages only
-                        continue
+                    if len(group) < 2:  # swing opponent: placeholder team outside every batch
+                        swing, _ = Team.objects.get_or_create(
+                            tournament=t, reference=f"Swing (Batch {room.code})",
+                            defaults={'short_reference': f"Swing {room.code}", 'type': Team.TYPE_SWING,
+                                      'use_institution_prefix': False})
+                        group = group + [swing.id]
                     rank += 1
                     d = Debate.objects.create(round=r, venue=venues[room.id], room_rank=rank, bracket=0)
                     for side, team_id in enumerate(group):
