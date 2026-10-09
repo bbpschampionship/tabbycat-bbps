@@ -30,7 +30,7 @@
         {% for mo in motions %}<option value="{{ mo.id }}" {% if p.motion_id == mo.id %}selected{% endif %}>{{ mo.reference|default:"" }}{% if mo.reference %}: {% endif %}{{ mo.text|truncatechars:120 }}</option>{% endfor %}
       </select>
       <div class="row" style="margin-top:10px">
-        <button type="submit" name="action" value="release" {% if locked %}disabled{% endif %}>{% if p.is_released %}Change / resend{% else %}Release &amp; start prep{% endif %}</button>
+        <button type="submit" name="action" value="release" {% if locked %}disabled{% endif %} onclick="return confirm('Release this motion to Pair {{ p.seq }}? Prep time starts now and both students are messaged.')">{% if p.is_released %}Change / resend{% else %}Release &amp; start prep{% endif %}</button>
         {% if p.is_released %}<span class="muted">Released {{ p.released_ist }}</span>{% endif %}
       </div>
       {% if p.is_released %}

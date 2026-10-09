@@ -4,7 +4,7 @@
 <form method="post" class="box">{% csrf_token %}
   <p><label>Prep time after a pair's motion is released: <input type="number" name="prep_minutes" value="{{ release.prep_minutes }}" min="1"> minutes</label></p>
   <p><label>Students who qualify per track: top <input type="number" name="qualify_count" value="{{ release.qualify_count }}" min="0"></label></p>
-  <button>Save</button>
+  <button onclick="return confirm('Save prep time and qualify count?')">Save</button>
 </form>
 <div class="box"><h2>Release status</h2>
 <table><tbody>

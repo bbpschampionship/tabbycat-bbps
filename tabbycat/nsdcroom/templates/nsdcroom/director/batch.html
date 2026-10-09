@@ -11,7 +11,7 @@
     {% for x in judges %}<span><b>{{ x.j.name }}</b> {{ x.j.phone }} · <a href="{{ x.url }}" target="_blank">judge room ↗</a> · <a href="#" class="copy" data-copy="{{ x.url }}">copy link</a></span>{% empty %}<span class="b bad">No judge assigned</span>{% endfor %}
     <form method="post" class="bar" style="margin:0 0 0 auto">{% csrf_token %}<input type="hidden" name="round" value="{{ round.seq }}"><input type="hidden" name="action" value="set_judge">
       <select name="judge">{% for j in all_judges %}<option value="{{ j.id }}">{{ j.name }}{% if j.institution_id %} (Batch {{ j.institution.code }}){% else %} (backup){% endif %}</option>{% endfor %}</select>
-      <button class="sec">Make judge of this batch</button></form>
+      <button class="sec" onclick="return confirm('Make this person the judge of Batch {{ room.code }}? The current judge moves to backups.')">Make judge of this batch</button></form>
   </div>
   <div class="muted">POC: {{ profile.poc_name|default:"—" }} {{ profile.poc_phone }}</div>
 </div>
@@ -37,7 +37,7 @@
         {% endfor %}
         {% if p.is_swing %}<span class="muted small">no opponent (solo speech)</span>{% endif %}
         <button>Save</button>
-        {% if not p.is_swing %}<button class="sec" name="action" value="swap">Swap sides</button>{% endif %}
+        {% if not p.is_swing %}<button class="sec" name="action" value="swap" onclick="return confirm('Swap For and Against for Pair {{ p.seq }}? Any scores stay with each student.')">Swap sides</button>{% endif %}
       </form>
     </td>
     {% endwith %}
@@ -45,7 +45,7 @@
       <form method="post" class="bar" style="margin:0">{% csrf_token %}<input type="hidden" name="round" value="{{ round.seq }}"><input type="hidden" name="pairing" value="{{ p.id }}">
         <select name="motion" style="width:100%"><option value="">— motion —</option>{% for mo in motions %}<option value="{{ mo.id }}" {% if p.motion_id == mo.id %}selected{% endif %}>{{ mo.text|truncatechars:90 }}</option>{% endfor %}</select>
         <button name="action" value="motion" class="sec">Save</button>
-        <button name="action" value="release">{% if p.is_released %}Re-release{% else %}Release{% endif %}</button>
+        <button name="action" value="release" onclick="return confirm('Release this motion to Pair {{ p.seq }}? Prep time starts now and both students get a WhatsApp + email.')">{% if p.is_released %}Re-release{% else %}Release{% endif %}</button>
         {% if p.is_released %}<span class="b ok">prep ends {{ p.prep_end_ist }}</span>{% endif %}
       </form>
     </td>
@@ -64,7 +64,7 @@
     <td><select name="side_{{ s.team.id }}"><option value="1" {% if s.side == 1 %}selected{% endif %}>For</option><option value="2" {% if s.side == 2 %}selected{% endif %}>Against</option></select></td></tr>{% endfor %}
   </tbody></table>
   <p class="muted small">Each pair needs one For and one Against; a student alone in a pair must be For. Pairs whose line-up changes lose their scores. Pairs are renumbered in order.</p>
-  <button>Save draw</button></form>
+  <button onclick="return confirm('Save draw changes for {{ round.name }}? Pairs whose line-up changes lose their scores and motion release. The public draw updates immediately.')">Save draw</button></form>
 </details>
 
 <div class="box">

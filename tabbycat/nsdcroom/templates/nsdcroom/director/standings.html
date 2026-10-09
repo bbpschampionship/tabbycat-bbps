@@ -6,7 +6,7 @@
   <a class="btn sec" href="?track={{ track }}&format=csv">Download CSV</a>
   <span class="muted">Top {{ release.qualify_count }} qualify (gold line). Ranked by total, then wins.</span>
   <form method="post" style="margin-left:auto">{% csrf_token %}
-    {% if release.standings_released %}<button class="warn" name="action" value="hide_standings">Hide final rankings</button>
+    {% if release.standings_released %}<button class="warn" name="action" value="hide_standings" onclick="return confirm('Hide the final rankings from the public?')">Hide final rankings</button>
     {% else %}<button name="action" value="release_standings" onclick="return confirm('Publish final rankings and the qualified list?')">Release final rankings</button>{% endif %}</form>
 </div>
 <table>

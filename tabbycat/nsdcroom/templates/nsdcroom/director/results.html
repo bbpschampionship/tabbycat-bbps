@@ -5,7 +5,7 @@
   {% include "nsdcroom/director/_filters.html" %}
   <span class="seg"><a class="{% if not only_missing %}on{% endif %}" href="?round={{ round.seq }}{% if track %}&track={{ track }}{% endif %}">All pairs</a><a class="{% if only_missing %}on{% endif %}" href="?round={{ round.seq }}{% if track %}&track={{ track }}{% endif %}&missing=1">Missing scores only</a></span>
   <form method="post" style="margin-left:auto">{% csrf_token %}<input type="hidden" name="round" value="{{ round.seq }}">
-    {% if released %}<button class="warn" name="action" value="hide_results">Hide {{ round.name }} results</button>
+    {% if released %}<button class="warn" name="action" value="hide_results" onclick="return confirm('Hide {{ round.name }} results from the public?')">Hide {{ round.name }} results</button>
     {% else %}<button name="action" value="release_results" onclick="return confirm('Release {{ round.name }} results to the public? Judges will be locked out of editing.')">Release {{ round.name }} results</button>{% endif %}</form>
 </div>
 <table>
