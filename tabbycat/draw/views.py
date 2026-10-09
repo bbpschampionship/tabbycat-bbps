@@ -470,12 +470,9 @@ class AdminDrawView(RoundMixin, AdministratorMixin, AdminDrawUtilitiesMixin, Vue
     def get_standard_table(self):
         r = self.round
 
-        if r.is_break_round:
-            sort_key = "room-rank"
-            sort_order = 'asc'
-        else:
-            sort_key = "bracket"
-            sort_order = 'desc'
+        # NSDC: always batch-wise (room rank = batch order, then pair order)
+        sort_key = "room-rank"
+        sort_order = 'asc'
 
         table = AdminDrawTableBuilder(view=self, sort_key=sort_key,
                                       sort_order=sort_order,
@@ -484,10 +481,7 @@ class AdminDrawView(RoundMixin, AdministratorMixin, AdminDrawUtilitiesMixin, Vue
         draw = self.get_draw()
         populate_history(draw)
 
-        if r.is_break_round:
-            table.add_room_rank_columns(draw)
-        else:
-            table.add_debate_bracket_columns(draw)
+        table.add_room_rank_columns(draw)
 
         table.add_debate_venue_columns(draw, for_admin=True)
         table.add_debate_scheduled_at_column_if_needed(draw)
@@ -525,7 +519,6 @@ class AdminDrawView(RoundMixin, AdministratorMixin, AdminDrawUtilitiesMixin, Vue
         else:
             table.add_debate_adjudicators_column(draw, show_splits=False, for_admin=True)
 
-        table.add_draw_conflicts_columns(draw, self.venue_conflicts, self.adjudicator_conflicts, standings)
 
         if not r.is_break_round:
             table.highlight_column = 0  # Highlight based on first column (bracket)

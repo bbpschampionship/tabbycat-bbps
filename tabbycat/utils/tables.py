@@ -790,6 +790,7 @@ class TabbycatTableBuilder(BaseTableBuilder):
         self.add_column(header, cells)
 
     def add_draw_conflicts_columns(self, debates, venue_conflicts, adjudicator_conflicts, standings=None):
+        return  # NSDC: no Conflicts/Flags column anywhere
 
         conflicts_by_debate = []
         for debate in debates:

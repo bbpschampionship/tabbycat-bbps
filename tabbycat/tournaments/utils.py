@@ -40,6 +40,14 @@ SIDE_NAMES = {
         "0_abbr": _("Pro"),
         "1_abbr": _("Con"),
     },
+    'for-against': {
+        "0_full": _("for"),
+        "1_full": _("against"),
+        "0_team": _("for team"),
+        "1_team": _("against team"),
+        "0_abbr": _("For"),
+        "1_abbr": _("Against"),
+    },
     'appellant-respondent': {
         "0_full": _("appellant"),
         "1_full": _("respondent"),
