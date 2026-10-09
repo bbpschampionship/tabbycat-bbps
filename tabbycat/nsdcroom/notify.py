@@ -23,7 +23,7 @@ from zoneinfo import ZoneInfo
 
 from django.core.mail import EmailMessage, get_connection
 
-from . import logic
+from . import logic, mailchimp
 from .models import Notification
 
 logger = logging.getLogger(__name__)
@@ -136,7 +136,7 @@ def smtp_connection():
                           username=user, password=password, use_tls=True, timeout=10)
 
 
-def notify_via_n8n(pairing, members, poc, public_url, webhook):
+def notify_via_n8n(pairing, members, poc, public_url, webhook, with_email=True):
     """One webhook call for the whole pair; n8n replies {"results": [{team_id, channel, status, detail}]}."""
     students = []
     for member in members:
@@ -146,7 +146,7 @@ def notify_via_n8n(pairing, members, poc, public_url, webhook):
         students.append({
             'team_id': member.team_id,
             'phone': whatsapp_number(speaker.phone if speaker else ''),
-            'email': email if '@' in email else '',
+            'email': email if with_email and '@' in email else '',
             **build_message(pairing, member, others, public_url),
         })
     payload = {
@@ -189,6 +189,20 @@ def notify_pairing(pairing, public_url=''):
     poc = f"{profile.poc_name} {profile.poc_phone}".strip() if profile else ''
     public_url = os.environ.get('NSDC_PUBLIC_URL') or public_url
     webhook = os.environ.get('NSDC_N8N_WEBHOOK_URL')
+    if mailchimp.enabled():  # email from Mailchimp (info@), WhatsApp still via n8n
+        rows = []
+        for member in members:
+            others = [o for o in members if o.team_id != member.team_id]
+            speaker = member.team.speaker_set.first()
+            email = (speaker.email or '') if speaker else ''
+            tag = f"NSDC {pairing.round.name} B{pairing.room.code} P{pairing.seq} {logic.team_name(member.team)}"
+            status, detail = mailchimp.send(email, build_message(pairing, member, others, public_url), poc, tag)
+            rows.append(Notification.objects.create(pairing=pairing, team=member.team, channel='email',
+                                                    destination=email, status=status, detail=detail))
+        if webhook:
+            rows += [r for r in notify_via_n8n(pairing, members, poc, public_url, webhook, with_email=False)
+                     if r.channel == 'whatsapp']
+        return rows
     if webhook:
         return notify_via_n8n(pairing, members, poc, public_url, webhook)
     connection = smtp_connection()
