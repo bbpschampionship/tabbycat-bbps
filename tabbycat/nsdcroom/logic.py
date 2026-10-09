@@ -296,7 +296,8 @@ def validate_scores(scores):
         if v > MAX_SCORE:
             raise ValidationError(f"Scores are out of {MAX_SCORE}.")
         values.append(v)
-    if len(values) > 1 and len(set(values)) != len(values):
+    present = [v for v in values if v != 0]  # 0 = absent
+    if len(present) > 1 and len(set(present)) != len(present):
         raise ValidationError("No draws: the winner must score higher than the loser.")
     return values
 

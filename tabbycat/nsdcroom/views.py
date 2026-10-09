@@ -164,7 +164,8 @@ class JudgeRoomView(TournamentView):
                                  + (f", failed: {failed}" if failed else "") + ".")
             elif action == 'score':
                 pairing = get_object_or_404(Pairing, id=request.POST.get('pairing'), round=round, room=self.room)
-                raw = {m.team_id: request.POST.get(f'score_{m.team_id}') for m in pairing.members}
+                raw = {m.team_id: ('0' if request.POST.get(f'absent_{m.team_id}') else request.POST.get(f'score_{m.team_id}'))
+                       for m in pairing.members}
                 logic.save_scores(pairing, raw)
                 messages.success(request, f"Pair {pairing.seq} result saved.")
             else:

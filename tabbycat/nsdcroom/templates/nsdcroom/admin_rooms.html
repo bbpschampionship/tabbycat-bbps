@@ -37,10 +37,10 @@
 
 <section class="card">
   <h2>Rooms · {{ round.name }}</h2>
-  <table><thead><tr><th>Batch</th><th>Present</th><th>Pairs</th><th>Scored</th><th>Motions out</th><th>Judge link</th></tr></thead><tbody>
+  <table><thead><tr><th>Batch</th><th>Pairs</th><th>Scored</th><th>Motions out</th><th>Judge link</th></tr></thead><tbody>
   {% for row in rooms %}<tr>
     <td><strong>{{ row.label }}</strong><div class="muted">{{ row.count }} speakers</div></td>
-    <td>{{ row.present }}</td><td>{{ row.pairs }}</td>
+    <td>{{ row.pairs }}</td>
     <td>{% if row.pairs and row.scored == row.pairs %}<span class="pill ok">{{ row.scored }}/{{ row.pairs }}</span>{% else %}{{ row.scored }}/{{ row.pairs }}{% endif %}</td>
     <td>{% if row.pairs %}{{ row.motions_out }}/{{ row.pairs }}{% else %}—{% endif %}</td>
     <td>{% for j in row.judges %}<div><strong>{{ j.judge.name|default:"Judge (name TBC)" }}</strong>{% if j.judge.phone %} · <a href="tel:{{ j.judge.phone|cut:' ' }}">{{ j.judge.phone }}</a>{% endif %}

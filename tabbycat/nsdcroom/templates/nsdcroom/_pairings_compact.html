@@ -6,7 +6,7 @@
     <tr>
       <td class="dn"><span class="cp-n">{{ p.seq }}</span></td>
       {% for m in p.members %}{% if not forloop.first %}<td class="dvs">vs</td>{% endif %}
-      <td class="{% if block.released and p.winner.team_id == m.team_id %}winner{% endif %}"><a class="sname{% if m.team_id == team_id %} me{% endif %}" href="{% url 'nsdcroom-public-student' tournament_slug=tournament.slug team_id=m.team_id %}">{{ m.name }}</a>{% if block.released and m.score is not None %} <b class="cp-sc">{{ m.score }}</b>{% endif %}{% if block.released and p.winner.team_id == m.team_id %}<span class="crown">★</span>{% endif %}</td>
+      <td class="{% if block.released and p.winner.team_id == m.team_id %}winner{% endif %}"><a class="sname{% if m.team_id == team_id %} me{% endif %}" href="{% url 'nsdcroom-public-student' tournament_slug=tournament.slug team_id=m.team_id %}">{{ m.name }}</a>{% if block.released and m.score is not None %} <b class="cp-sc">{% if m.score == 0 %}Absent{% else %}{{ m.score }}{% endif %}</b>{% endif %}{% if block.released and p.winner.team_id == m.team_id %}<span class="crown">★</span>{% endif %}</td>
       {% endfor %}
       {% if p.is_swing %}<td class="dvs">–</td><td class="muted solo">No opponent · solo speech, scored as usual</td>{% endif %}
     </tr>

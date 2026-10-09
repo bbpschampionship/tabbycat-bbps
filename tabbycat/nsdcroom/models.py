@@ -72,7 +72,8 @@ class Pairing(models.Model):
         members = self.members
         if not members or not self.is_scored:
             return None
-        return max(members, key=lambda m: m.score)
+        best = max(members, key=lambda m: m.score)
+        return best if best.score > 0 else None  # 0 = absent, cannot win
 
 
 class PairingSpeaker(models.Model):

@@ -8,7 +8,7 @@
         <div class="row"><div class="grow"><div class="side">{{ m.side_label }}</div>
           <strong class="{% if block.released and p.winner.team_id == m.team_id %}winner{% endif %}">{{ m.name }}</strong>{% if block.released and p.winner.team_id == m.team_id %}<span class="crown">★ Winner</span>{% endif %}
           {% if m.school %}<div class="muted">{{ m.school }}</div>{% endif %}</div>
-          {% if block.released and m.score is not None %}<span class="num" style="font-size:24px">{{ m.score }}</span>{% endif %}</div>
+          {% if block.released and m.score is not None %}<span class="num" style="font-size:24px">{% if m.score == 0 %}Absent{% else %}{{ m.score }}{% endif %}</span>{% endif %}</div>
       {% endfor %}
       {% if p.is_swing %}<div class="vsmark">vs</div><div class="row"><div class="grow"><div class="side">Against</div><strong>No opponent</strong><div class="muted">Gives a solo speech, scored as usual</div></div></div>{% endif %}
     </div>

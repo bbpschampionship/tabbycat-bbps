@@ -54,12 +54,12 @@ def judge_contact(room):
 
 def build_message(pairing, member, others, public_url):
     round, room = pairing.round, pairing.room
-    opponent = ' & '.join(logic.team_name(o.team) for o in others) if others else 'the Swing'
+    opponent = ' & '.join(logic.team_name(o.team) for o in others) if others else 'No opponent (solo speech, scored as usual)'
     return {
         'name': logic.team_name(member.team),
         'round': round.name,
         'pair': f"Pair {pairing.seq} · Batch {room.code}",
-        'side': member.side_label.upper() + (' (debating the Swing)' if not others else ''),
+        'side': member.side_label.upper(),
         'opponent': opponent,
         'motion': pairing.motion.text if pairing.motion else '',
         'prep_end': ist_time(pairing.prep_ends_at),
