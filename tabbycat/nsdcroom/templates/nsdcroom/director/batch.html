@@ -70,8 +70,8 @@
 
 <div class="box">
   <h2>Batch standings after {{ round.name }}</h2>
-  <table><thead><tr><th>#</th><th>Student</th><th>School</th><th class="num">Wins</th><th class="num">Total</th></tr></thead><tbody>
-  {% for r in standings %}<tr><td>{{ r.rank }}</td><td>{{ r.name }}</td><td class="muted">{{ r.school }}</td><td class="num">{{ r.wins }}</td><td class="num"><b>{{ r.total }}</b></td></tr>{% endfor %}
+  <table><thead><tr><th>#</th><th>Student</th><th>School</th><th class="num">Average</th><th class="num">Avg margin</th><th class="num">SD</th><th class="num">Highest</th></tr></thead><tbody>
+  {% for r in standings %}<tr><td>{{ r.rank }}</td><td>{{ r.name }}</td><td class="muted">{{ r.school }}</td><td class="num"><b>{{ r.avg }}</b></td><td class="num">{{ r.margin }}</td><td class="num">{{ r.sd }}</td><td class="num">{{ r.high }}</td></tr>{% endfor %}
   </tbody></table>
 </div>
 {% endblock %}

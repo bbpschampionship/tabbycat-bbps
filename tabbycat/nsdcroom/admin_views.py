@@ -259,11 +259,11 @@ class StandingsView(DirectorView):
             resp = HttpResponse(content_type='text/csv')
             resp['Content-Disposition'] = f'attachment; filename="nsdc-standings-{track or "all"}.csv"'
             w = csv.writer(resp)
-            w.writerow(['Rank', 'Name', 'School', 'Batch'] + [r.name for r in rounds] + ['Total', 'Wins', 'Qualified'])
+            w.writerow(['Rank', 'Name', 'School', 'Batch'] + [r.name for r in rounds] + ['Average', 'Avg margin', 'SD', 'Highest', 'Total', 'Wins', 'Qualified'])
             for r in rows:
                 w.writerow([r['rank'], r['name'], r['school'], r['batch']]
                            + [('Absent' if s == 0 else s if s is not None else '') for s in r['scores']]
-                           + [r['total'], r['wins'], 'Yes' if r['debated'] and r['rank'] <= c['release'].qualify_count else ''])
+                           + [r['avg'], r['margin'], r['sd'], r['high'], r['total'], r['wins'], 'Yes' if r['debated'] and r['rank'] <= c['release'].qualify_count else ''])
             return resp
         c.update(track=track, rows=rows, round_names=[r.name for r in rounds])
         return render(request, 'nsdcroom/director/standings.html', c)

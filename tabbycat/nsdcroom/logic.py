@@ -114,7 +114,7 @@ def room_round(round, room):
 
 def tally(rounds, team_ids=None):
     """{team_id: {'total', 'wins', 'debated', 'by_round': {round_id: score}}} over scored pairs."""
-    stats = defaultdict(lambda: {'total': 0, 'wins': 0, 'debated': 0, 'by_round': {}})
+    stats = defaultdict(lambda: {'total': 0, 'wins': 0, 'debated': 0, 'by_round': {}, 'scores': [], 'margins': []})
     qs = Pairing.objects.filter(round__in=rounds).prefetch_related('pairingspeaker_set')
     if team_ids is not None:
         qs = qs.filter(pairingspeaker__team_id__in=team_ids).distinct()
@@ -130,6 +130,9 @@ def tally(rounds, team_ids=None):
             s['total'] += m.score
             s['debated'] += 1
             s['by_round'][pairing.round_id] = m.score
+            s['scores'].append(m.score)
+            if len(members) == 2:  # margin = own score minus opponent's (negative when lost)
+                s['margins'].append(m.score - next(o.score for o in members if o.team_id != m.team_id))
             if winner is not None and winner.team_id == m.team_id:
                 s['wins'] += 1
     return stats
@@ -140,12 +143,18 @@ def ranked(teams, rounds):
     stats = tally(rounds, {t.id for t in teams})
     rows = []
     for t in teams:
-        s = stats.get(t.id, {'total': 0, 'wins': 0, 'debated': 0, 'by_round': {}})
-        rows.append({'team': t, 'name': team_name(t), 'school': team_school(t), **s})
-    rows.sort(key=lambda r: (-r['total'], -r['wins'], r['name'].lower()))
+        s = stats.get(t.id, {'total': 0, 'wins': 0, 'debated': 0, 'by_round': {}, 'scores': [], 'margins': []})
+        sc, mg = s['scores'], s['margins']
+        avg = sum(sc) / len(sc) if sc else 0
+        rows.append({'team': t, 'name': team_name(t), 'school': team_school(t), **s,
+                     'avg': round(avg, 2), 'margin': round(sum(mg) / len(mg), 2) if mg else 0,
+                     'sd': round((sum((x - avg) ** 2 for x in sc) / len(sc)) ** 0.5, 2) if sc else 0,
+                     'high': max(sc) if sc else 0})
+    # NSDC tiebreak order: average speaker score, average margin, lower SD (consistency), highest single round
+    rows.sort(key=lambda r: (-r['avg'], -r['margin'], r['sd'], -r['high'], r['name'].lower()))
     prev, rank = None, 0
     for i, r in enumerate(rows, start=1):
-        key = (r['total'], r['wins'])
+        key = (r['avg'], r['margin'], r['sd'], r['high'])
         if key != prev:
             rank, prev = i, key
         r['rank'] = rank

@@ -72,8 +72,8 @@
 <section class="card">
   <h2>Batch standings so far</h2>
   <p class="muted">Visible to you only until the tab team releases results.</p>
-  <table><thead><tr><th>#</th><th>Speaker</th><th>Wins</th><th>Total</th></tr></thead><tbody>
-  {% for r in standings %}<tr><td>{{ r.rank }}</td><td>{{ r.name }}{% if r.school %}<div class="muted">{{ r.school }}</div>{% endif %}</td><td>{{ r.wins }}</td><td><strong>{{ r.total }}</strong></td></tr>{% endfor %}
+  <table><thead><tr><th>#</th><th>Speaker</th><th>Avg margin</th><th>Average</th></tr></thead><tbody>
+  {% for r in standings %}<tr><td>{{ r.rank }}</td><td>{{ r.name }}{% if r.school %}<div class="muted">{{ r.school }}</div>{% endif %}</td><td>{{ r.margin }}</td><td><strong>{{ r.avg }}</strong></td></tr>{% endfor %}
   </tbody></table>
 </section>
 {% endif %}

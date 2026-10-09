@@ -10,11 +10,11 @@
 <div class="sec"><h2>{{ tr.name|default:"Rankings" }}</h2><span class="k">{{ tr.grades }}</span><span class="r"></span></div>
 <section class="card">
   <div class="scroll">
-  <table><thead><tr><th>#</th><th>Student</th><th>Batch</th>{% for r in rounds %}<th>{{ r.abbreviation }}</th>{% endfor %}<th>Wins</th><th>Total</th><th></th></tr></thead><tbody>
+  <table><thead><tr><th>#</th><th>Student</th><th>Batch</th>{% for r in rounds %}<th>{{ r.abbreviation }}</th>{% endfor %}<th>Average</th><th>Avg margin</th><th></th></tr></thead><tbody>
   {% for row in tr.rows %}<tr class="{% if row.qualified %}qual{% endif %}"><td><span class="rank">{{ row.rank }}</span></td>
     <td><strong>{{ row.name }}</strong>{% if row.school %}<div class="muted">{{ row.school }}</div>{% endif %}</td><td class="muted" style="white-space:nowrap">{{ row.batch }}</td>
     {% for r in rounds %}<td class="num">{% for rid, sc in row.by_round.items %}{% if rid == r.id %}{{ sc }}{% endif %}{% endfor %}</td>{% endfor %}
-    <td class="num">{{ row.wins }}</td><td class="num" style="font-size:19px">{{ row.total }}</td><td>{% if row.qualified %}<span class="pill gold">Qualified</span>{% endif %}</td></tr>{% endfor %}
+    <td class="num" style="font-size:19px">{{ row.avg }}</td><td class="num">{{ row.margin }}</td><td>{% if row.qualified %}<span class="pill gold">Qualified</span>{% endif %}</td></tr>{% endfor %}
   </tbody></table>
   </div>
 </section>

@@ -18,12 +18,12 @@
 {% if standings %}
 <div class="sec"><h2>Batch ranking</h2><span class="k">after {% for r in released_rounds %}{{ r.abbreviation }}{% if not forloop.last %}, {% endif %}{% endfor %}</span><span class="r"></span></div>
 <section class="card">
-  <div class="scroll"><table><thead><tr><th>#</th><th>Speaker</th>{% for r in released_rounds %}<th>{{ r.abbreviation }}</th>{% endfor %}<th>Wins</th><th>Total</th></tr></thead><tbody>
+  <div class="scroll"><table><thead><tr><th>#</th><th>Speaker</th>{% for r in released_rounds %}<th>{{ r.abbreviation }}</th>{% endfor %}<th>Average</th><th>Avg margin</th></tr></thead><tbody>
   {% for row in standings %}<tr><td><span class="rank">{{ row.rank }}</span></td><td><strong>{{ row.name }}</strong>{% if row.school %}<div class="muted">{{ row.school }}</div>{% endif %}</td>
     {% for r in released_rounds %}<td class="num">{% for rid, sc in row.by_round.items %}{% if rid == r.id %}{{ sc }}{% endif %}{% endfor %}</td>{% endfor %}
-    <td class="num">{{ row.wins }}</td><td class="num" style="font-size:19px">{{ row.total }}</td></tr>{% endfor %}
+    <td class="num" style="font-size:19px">{{ row.avg }}</td><td class="num">{{ row.margin }}</td></tr>{% endfor %}
   </tbody></table></div>
-  <p class="muted" style="margin:10px 0 0">Ranked by total score, then wins.</p>
+  <p class="muted" style="margin:10px 0 0">Ranked by average speaker score, then average margin, then consistency (lower spread of scores), then highest single round.</p>
 </section>
 {% endif %}
 
